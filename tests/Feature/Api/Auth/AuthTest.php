@@ -30,12 +30,13 @@ class AuthTest extends TestCase
 
         $response = $this->postJson('/api/v1/auth/register', $userData);
 
-        $response->assertStatus(201)
+        $response->assertStatus(200)
             ->assertJsonStructure([
                 'success',
                 'data' => [
+                    'user',
                     'token',
-                    'name'
+                    'token_type'
                 ],
                 'message'
             ]);
@@ -65,8 +66,9 @@ class AuthTest extends TestCase
             ->assertJsonStructure([
                 'success',
                 'data' => [
+                    'user',
                     'token',
-                    'name'
+                    'token_type'
                 ],
                 'message'
             ]);
@@ -105,7 +107,8 @@ class AuthTest extends TestCase
         $response->assertStatus(200)
             ->assertJson([
                 'success' => true,
-                'message' => 'Logged out successfully.'
+                'message' => 'Sesión cerrada exitosamente',
+                'data' => null
             ]);
     }
 
@@ -129,7 +132,6 @@ class AuthTest extends TestCase
                     'name',
                     'email',
                     'roles',
-                    'permissions'
                 ],
                 'message'
             ]);

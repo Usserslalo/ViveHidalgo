@@ -16,6 +16,9 @@ class CaracteristicaTest extends TestCase
     {
         parent::setUp();
         
+        // Crear el rol admin si no existe
+        $adminRole = \Spatie\Permission\Models\Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
+        
         // Crear un usuario admin para las pruebas
         $admin = User::factory()->create();
         $admin->assignRole('admin');

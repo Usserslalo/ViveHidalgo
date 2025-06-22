@@ -28,7 +28,7 @@ class DestinoFactory extends Factory
             'slug' => Str::slug($name),
             'short_description' => $this->faker->sentence(10),
             'description' => $this->faker->paragraphs(3, true),
-            'status' => $this->faker->randomElement(['draft', 'pending_review', 'published', 'rejected']),
+            'status' => $this->faker->randomElement(['draft', 'pending_review', 'published']),
             'address' => $this->faker->address(),
             'latitude' => $this->faker->latitude(19.0, 21.0), // Coordenadas aproximadas de Hidalgo
             'longitude' => $this->faker->longitude(-99.5, -97.5), // Coordenadas aproximadas de Hidalgo

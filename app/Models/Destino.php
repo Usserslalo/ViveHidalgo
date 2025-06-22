@@ -214,4 +214,16 @@ class Destino extends Model
             $this->attributes['location'] = $value;
         }
     }
+
+    public function reviews()
+    {
+        return $this->hasMany(Review::class);
+    }
+
+    public function updateReviewStats()
+    {
+        $this->average_rating = (float) $this->reviews()->where('is_approved', true)->avg('rating') ?: 0;
+        $this->reviews_count = $this->reviews()->where('is_approved', true)->count();
+        $this->save();
+    }
 }

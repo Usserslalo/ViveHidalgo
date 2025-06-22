@@ -69,13 +69,13 @@ class RolePermissionSeeder extends Seeder
         ];
 
         foreach ($permissions as $permission) {
-            Permission::firstOrCreate(['name' => $permission]);
+            Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
         }
 
         // Crear roles
-        $adminRole = Role::firstOrCreate(['name' => 'admin']);
-        $providerRole = Role::firstOrCreate(['name' => 'provider']);
-        $touristRole = Role::firstOrCreate(['name' => 'tourist']);
+        $adminRole = Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
+        $providerRole = Role::firstOrCreate(['name' => 'provider', 'guard_name' => 'web']);
+        $touristRole = Role::firstOrCreate(['name' => 'tourist', 'guard_name' => 'web']);
 
         // Asignar permisos al rol admin
         $adminRole->givePermissionTo(Permission::all());

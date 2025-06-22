@@ -50,4 +50,29 @@ class BaseController extends Controller
             'errors' => $errors
         ], 422);
     }
+
+    /**
+     * Respuesta exitosa (alias para sendResponse)
+     */
+    protected function sendResponse($data, $message = null, $code = 200): JsonResponse
+    {
+        return $this->successResponse($data, $message, $code);
+    }
+
+    /**
+     * Respuesta de error (alias para sendError)
+     */
+    protected function sendError($message, $errors = [], $code = 400): JsonResponse
+    {
+        $response = [
+            'success' => false,
+            'message' => $message
+        ];
+
+        if (!empty($errors)) {
+            $response['errors'] = $errors;
+        }
+
+        return response()->json($response, $code);
+    }
 } 

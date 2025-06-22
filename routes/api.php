@@ -157,6 +157,12 @@ Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
         Route::delete('favoritos/{destino_id}', [App\Http\Controllers\Api\FavoritoController::class, 'removeFromFavorites']);
         Route::get('favoritos/check/{destino_id}', [App\Http\Controllers\Api\FavoritoController::class, 'checkIfFavorite']);
         
+        // Reseñas
+        Route::get('reviews', [App\Http\Controllers\Api\ReviewController::class, 'getUserReviews']);
+        Route::post('reviews/{destino}', [App\Http\Controllers\Api\ReviewController::class, 'store']);
+        Route::put('reviews/{review}', [App\Http\Controllers\Api\ReviewController::class, 'update']);
+        Route::delete('reviews/{review}', [App\Http\Controllers\Api\ReviewController::class, 'destroy']);
+        
         // Historial
         Route::get('historial', [App\Http\Controllers\Api\HistorialController::class, 'index']);
     });
@@ -259,14 +265,15 @@ Route::apiResource('v1/categorias', App\Http\Controllers\Api\CategoriaController
 Route::apiResource('v1/destinos', App\Http\Controllers\Api\DestinoController::class);
 
 // --- CONTENT: CARACTERISTICAS ---
-Route::apiResource('v1/caracteristicas', App\Http\Controllers\Api\CaracteristicaController::class);
-Route::get('v1/caracteristicas/tipo/{tipo}', [App\Http\Controllers\Api\CaracteristicaController::class, 'porTipo']);
 Route::get('v1/caracteristicas/activas', [App\Http\Controllers\Api\CaracteristicaController::class, 'activas']);
+Route::get('v1/caracteristicas/tipo/{tipo}', [App\Http\Controllers\Api\CaracteristicaController::class, 'porTipo']);
+Route::apiResource('v1/caracteristicas', App\Http\Controllers\Api\CaracteristicaController::class);
 
 // --- PUBLIC API (No Auth Required) ---
 Route::prefix('v1/public')->name('api.public.')->group(function () {
     Route::get('destinos', [App\Http\Controllers\Api\Public\DestinoController::class, 'index'])->name('destinos.index');
     Route::get('destinos/{slug}', [App\Http\Controllers\Api\Public\DestinoController::class, 'show'])->name('destinos.show');
+    Route::get('destinos/{destino}/reviews', [App\Http\Controllers\Api\ReviewController::class, 'getDestinoReviews'])->name('destinos.reviews');
     // Aquí podrías agregar rutas para regiones y categorías públicas si es necesario
     // Route::get('regions', [App\Http\Controllers\Api\Public\RegionController::class, 'index'])->name('regions.index');
     // Route::get('categories', [App\Http\Controllers\Api\Public\CategoryController::class, 'index'])->name('categories.index');

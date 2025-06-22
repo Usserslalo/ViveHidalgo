@@ -126,4 +126,9 @@ class User extends Authenticatable implements FilamentUser
     {
         return null;
     }
+
+    public function reviews()
+    {
+        return $this->hasMany(Review::class);
+    }
 }

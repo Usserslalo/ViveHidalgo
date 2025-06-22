@@ -18,6 +18,8 @@ class DatabaseSeeder extends Seeder
             RolePermissionSeeder::class,
             AdminUserSeeder::class,
             CaracteristicaSeeder::class,
+            UserSeeder::class,
+            DestinoSeeder::class,
         ]);
 
         // Crear usuario administrador si no existe
