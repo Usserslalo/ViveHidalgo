@@ -152,9 +152,10 @@ Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
         Route::get('stats', [UserController::class, 'stats'])->name('api.user.stats');
         
         // Favoritos
-        Route::get('favoritos', [App\Http\Controllers\Api\FavoritoController::class, 'index']);
-        Route::post('favoritos/{destino}', [App\Http\Controllers\Api\FavoritoController::class, 'store']);
-        Route::delete('favoritos/{destino}', [App\Http\Controllers\Api\FavoritoController::class, 'destroy']);
+        Route::get('favoritos', [App\Http\Controllers\Api\FavoritoController::class, 'getUserFavorites']);
+        Route::post('favoritos/{destino_id}', [App\Http\Controllers\Api\FavoritoController::class, 'addToFavorites']);
+        Route::delete('favoritos/{destino_id}', [App\Http\Controllers\Api\FavoritoController::class, 'removeFromFavorites']);
+        Route::get('favoritos/check/{destino_id}', [App\Http\Controllers\Api\FavoritoController::class, 'checkIfFavorite']);
         
         // Historial
         Route::get('historial', [App\Http\Controllers\Api\HistorialController::class, 'index']);
