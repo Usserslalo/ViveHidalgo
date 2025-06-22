@@ -226,7 +226,7 @@
                     "Public Content"
                 ],
                 "summary": "Get list of published destinations",
-                "description": "Returns a paginated list of published destinations.",
+                "description": "Returns a paginated list of published destinations with optional geolocation filtering.",
                 "operationId": "getPublicDestinosList",
                 "parameters": [
                     {
@@ -245,6 +245,45 @@
                         "required": false,
                         "schema": {
                             "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "caracteristicas",
+                        "in": "query",
+                        "description": "Filter by characteristics (comma-separated IDs)",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "latitude",
+                        "in": "query",
+                        "description": "Latitude for distance calculation",
+                        "required": false,
+                        "schema": {
+                            "type": "number",
+                            "format": "float"
+                        }
+                    },
+                    {
+                        "name": "longitude",
+                        "in": "query",
+                        "description": "Longitude for distance calculation",
+                        "required": false,
+                        "schema": {
+                            "type": "number",
+                            "format": "float"
+                        }
+                    },
+                    {
+                        "name": "radius",
+                        "in": "query",
+                        "description": "Radius in kilometers for filtering destinations",
+                        "required": false,
+                        "schema": {
+                            "type": "number",
+                            "format": "float"
                         }
                     }
                 ],

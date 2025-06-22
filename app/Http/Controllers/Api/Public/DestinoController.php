@@ -15,7 +15,7 @@ class DestinoController extends BaseController
      *      operationId="getPublicDestinosList",
      *      tags={"Public Content"},
      *      summary="Get list of published destinations",
-     *      description="Returns a paginated list of published destinations.",
+     *      description="Returns a paginated list of published destinations with optional geolocation filtering.",
      *      @OA\Parameter(
      *          name="region_id",
      *          in="query",
@@ -36,6 +36,27 @@ class DestinoController extends BaseController
      *          description="Filter by characteristics (comma-separated IDs)",
      *          required=false,
      *          @OA\Schema(type="string")
+     *      ),
+     *      @OA\Parameter(
+     *          name="latitude",
+     *          in="query",
+     *          description="Latitude for distance calculation",
+     *          required=false,
+     *          @OA\Schema(type="number", format="float")
+     *      ),
+     *      @OA\Parameter(
+     *          name="longitude",
+     *          in="query",
+     *          description="Longitude for distance calculation",
+     *          required=false,
+     *          @OA\Schema(type="number", format="float")
+     *      ),
+     *      @OA\Parameter(
+     *          name="radius",
+     *          in="query",
+     *          description="Radius in kilometers for filtering destinations",
+     *          required=false,
+     *          @OA\Schema(type="number", format="float")
      *      ),
      *      @OA\Response(
      *          response=200,
@@ -86,6 +107,16 @@ class DestinoController extends BaseController
             $query->whereHas('caracteristicas', function ($q) use ($caracteristicaIds) {
                 $q->whereIn('caracteristicas.id', $caracteristicaIds);
             });
+        }
+
+        // Geolocation filtering
+        if ($request->has('latitude') && $request->has('longitude')) {
+            $latitude = $request->input('latitude');
+            $longitude = $request->input('longitude');
+            $radius = $request->input('radius', 50); // Default 50km radius
+
+            $query->withDistance($latitude, $longitude)
+                  ->withinRadius($latitude, $longitude, $radius);
         }
         
         $destinos = $query->paginate(15);
