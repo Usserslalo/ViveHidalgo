@@ -274,9 +274,13 @@ Route::prefix('v1/public')->name('api.public.')->group(function () {
     Route::get('destinos', [App\Http\Controllers\Api\Public\DestinoController::class, 'index'])->name('destinos.index');
     Route::get('destinos/{slug}', [App\Http\Controllers\Api\Public\DestinoController::class, 'show'])->name('destinos.show');
     Route::get('destinos/{destino}/reviews', [App\Http\Controllers\Api\ReviewController::class, 'getDestinoReviews'])->name('destinos.reviews');
+    Route::get('destinos/{destino}/promociones', [App\Http\Controllers\Api\PromocionController::class, 'forDestino'])->name('destinos.promociones');
+
+    // Rutas públicas para promociones
+    Route::get('promociones', [App\Http\Controllers\Api\PromocionController::class, 'index'])->name('promociones.index');
+    
     // Aquí podrías agregar rutas para regiones y categorías públicas si es necesario
     // Route::get('regions', [App\Http\Controllers\Api\Public\RegionController::class, 'index'])->name('regions.index');
-    // Route::get('categories', [App\Http\Controllers\Api\Public\CategoryController::class, 'index'])->name('categories.index');
 });
 
 // --- VIVE HIDALGO CONTENT (To be implemented later) ---

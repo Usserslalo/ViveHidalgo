@@ -47,6 +47,7 @@ return [
                  */
                 'annotations' => [
                     app_path('Http/Controllers/Api'),
+                    app_path('Models'),
                 ],
             ],
         ],

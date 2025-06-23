@@ -10,6 +10,30 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
+/**
+ * @OA\Schema(
+ *     schema="Destino",
+ *     type="object",
+ *     title="Destino Turístico",
+ *     description="Representa un destino turístico en la plataforma.",
+ *     required={"id", "name", "slug", "status"},
+ *     @OA\Property(property="id", type="integer", format="int64", description="ID único del destino."),
+ *     @OA\Property(property="name", type="string", description="Nombre del destino."),
+ *     @OA\Property(property="slug", type="string", description="Slug único para la URL."),
+ *     @OA\Property(property="short_description", type="string", nullable=true, description="Descripción corta."),
+ *     @OA\Property(property="description", type="string", nullable=true, description="Descripción completa y detallada."),
+ *     @OA\Property(property="address", type="string", nullable=true, description="Dirección física del lugar."),
+ *     @OA\Property(property="latitude", type="number", format="float", nullable=true, description="Latitud para el mapa."),
+ *     @OA\Property(property="longitude", type="number", format="float", nullable=true, description="Longitud para el mapa."),
+ *     @OA\Property(property="phone", type="string", nullable=true, description="Teléfono de contacto."),
+ *     @OA\Property(property="website", type="string", nullable=true, description="Sitio web oficial."),
+ *     @OA\Property(property="status", type="string", enum={"published", "draft", "pending"}, description="Estado de publicación."),
+ *     @OA\Property(property="average_rating", type="number", format="float", readOnly=true, description="Calificación promedio de reseñas (0-5)."),
+ *     @OA\Property(property="reviews_count", type="integer", readOnly=true, description="Número total de reseñas aprobadas."),
+ *     @OA\Property(property="created_at", type="string", format="date-time", readOnly=true),
+ *     @OA\Property(property="updated_at", type="string", format="date-time", readOnly=true)
+ * )
+ */
 class Destino extends Model
 {
     use HasFactory;

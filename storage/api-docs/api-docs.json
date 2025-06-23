@@ -493,6 +493,70 @@
                 ]
             }
         },
+        "/api/v1/public/promociones": {
+            "get": {
+                "tags": [
+                    "Promociones"
+                ],
+                "summary": "Obtener todas las promociones activas",
+                "description": "Devuelve una lista paginada de todas las promociones que están actualmente activas.",
+                "operationId": "getPublicPromociones",
+                "responses": {
+                    "200": {
+                        "description": "Operación exitosa",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Promocion"
+                                            }
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Promociones activas recuperadas exitosamente."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/public/destinos/{destino}/promociones": {
+            "get": {
+                "tags": [
+                    "Promociones"
+                ],
+                "summary": "Obtener promociones activas para un destino específico",
+                "description": "Devuelve las promociones activas para un destino dado por su ID.",
+                "operationId": "getPromocionesForDestino",
+                "parameters": [
+                    {
+                        "name": "destino",
+                        "in": "path",
+                        "description": "ID del Destino",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Operación exitosa"
+                    }
+                }
+            }
+        },
         "/api/v1/public/destinos": {
             "get": {
                 "tags": [
@@ -667,6 +731,332 @@
                         "description": "Destination not found"
                     }
                 }
+            }
+        },
+        "/api/v1/user/reviews/{destino}": {
+            "post": {
+                "tags": [
+                    "Reviews"
+                ],
+                "summary": "Crear una nueva reseña para un destino",
+                "description": "Crea una reseña para un destino específico. El usuario debe tener el destino en favoritos y no haberlo reseñado antes.",
+                "operationId": "createReview",
+                "parameters": [
+                    {
+                        "name": "destino",
+                        "in": "path",
+                        "description": "ID del destino",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ReviewCreateRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Reseña creada exitosamente",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Reseña creada exitosamente. Pendiente de aprobación."
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/Review"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "No autorizado para crear reseña",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "No puedes reseñar este destino. Asegúrate de tenerlo en favoritos y no haberlo reseñado antes."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Datos de validación incorrectos"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/user/reviews/{review}": {
+            "put": {
+                "tags": [
+                    "Reviews"
+                ],
+                "summary": "Actualizar una reseña existente",
+                "description": "Actualiza una reseña. Solo el autor de la reseña puede editarla.",
+                "operationId": "updateReview",
+                "parameters": [
+                    {
+                        "name": "review",
+                        "in": "path",
+                        "description": "ID de la reseña",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ReviewUpdateRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Reseña actualizada exitosamente",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Reseña actualizada exitosamente."
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/Review"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "No autorizado para editar la reseña"
+                    },
+                    "422": {
+                        "description": "Datos de validación incorrectos"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Reviews"
+                ],
+                "summary": "Eliminar una reseña",
+                "description": "Elimina una reseña. Solo el autor de la reseña puede eliminarla.",
+                "operationId": "deleteReview",
+                "parameters": [
+                    {
+                        "name": "review",
+                        "in": "path",
+                        "description": "ID de la reseña",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Reseña eliminada exitosamente",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Reseña eliminada exitosamente."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "No autorizado para eliminar la reseña"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/public/destinos/{destino}/reviews": {
+            "get": {
+                "tags": [
+                    "Reviews"
+                ],
+                "summary": "Obtener reseñas de un destino",
+                "description": "Obtiene las reseñas aprobadas de un destino específico. No requiere autenticación.",
+                "operationId": "getDestinoReviews",
+                "parameters": [
+                    {
+                        "name": "destino",
+                        "in": "path",
+                        "description": "ID del destino",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Reseñas obtenidas exitosamente",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Reseñas obtenidas exitosamente."
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "data": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "$ref": "#/components/schemas/Review"
+                                                    }
+                                                },
+                                                "current_page": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "per_page": {
+                                                    "type": "integer",
+                                                    "example": 10
+                                                },
+                                                "total": {
+                                                    "type": "integer",
+                                                    "example": 25
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/user/reviews": {
+            "get": {
+                "tags": [
+                    "Reviews"
+                ],
+                "summary": "Obtener reseñas del usuario autenticado",
+                "description": "Obtiene todas las reseñas del usuario autenticado, tanto aprobadas como pendientes.",
+                "operationId": "getUserReviews",
+                "responses": {
+                    "200": {
+                        "description": "Reseñas obtenidas exitosamente",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Tus reseñas obtenidas exitosamente."
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "data": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "$ref": "#/components/schemas/Review"
+                                                    }
+                                                },
+                                                "current_page": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "per_page": {
+                                                    "type": "integer",
+                                                    "example": 10
+                                                },
+                                                "total": {
+                                                    "type": "integer",
+                                                    "example": 5
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
             }
         },
         "/api/v1/user/profile": {
@@ -874,66 +1264,257 @@
                 },
                 "type": "object"
             },
-            "Destino": {
-                "title": "Destino",
+            "Review": {
+                "title": "Review",
                 "properties": {
                     "id": {
                         "type": "integer",
                         "readOnly": true,
                         "example": 1
                     },
-                    "name": {
+                    "user_id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "destino_id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "rating": {
+                        "type": "integer",
+                        "maximum": 5,
+                        "minimum": 1,
+                        "example": 5
+                    },
+                    "comment": {
                         "type": "string",
-                        "example": "Huasca de Ocampo"
+                        "example": "Excelente destino turístico, muy recomendado.",
+                        "nullable": true
                     },
-                    "slug": {
+                    "is_approved": {
+                        "type": "boolean",
+                        "example": false
+                    },
+                    "created_at": {
                         "type": "string",
-                        "readOnly": true,
-                        "example": "huasca-de-ocampo"
+                        "format": "date-time",
+                        "readOnly": true
                     },
-                    "short_description": {
+                    "updated_at": {
                         "type": "string",
-                        "example": "El primer Pueblo Mágico de México."
-                    },
-                    "description": {
-                        "type": "string",
-                        "example": "Texto largo con la descripción detallada del destino."
-                    },
-                    "status": {
-                        "type": "string",
-                        "enum": [
-                            "draft",
-                            "pending_review",
-                            "published",
-                            "rejected"
-                        ],
-                        "example": "published"
-                    },
-                    "address": {
-                        "type": "string",
-                        "example": "Centro, Huasca de Ocampo, Hgo."
-                    },
-                    "latitude": {
-                        "type": "number",
-                        "format": "float",
-                        "example": 20.2186
-                    },
-                    "longitude": {
-                        "type": "number",
-                        "format": "float",
-                        "example": -98.5714
-                    },
-                    "region": {
-                        "$ref": "#/components/schemas/Region"
-                    },
-                    "categorias": {
-                        "type": "array",
-                        "items": {
-                            "$ref": "#/components/schemas/Categoria"
-                        }
+                        "format": "date-time",
+                        "readOnly": true
                     },
                     "user": {
                         "$ref": "#/components/schemas/User"
+                    },
+                    "destino": {
+                        "$ref": "#/components/schemas/Destino"
+                    }
+                },
+                "type": "object"
+            },
+            "ReviewCreateRequest": {
+                "title": "Review Create Request",
+                "required": [
+                    "rating"
+                ],
+                "properties": {
+                    "rating": {
+                        "description": "Calificación del 1 al 5",
+                        "type": "integer",
+                        "maximum": 5,
+                        "minimum": 1,
+                        "example": 5
+                    },
+                    "comment": {
+                        "description": "Comentario opcional",
+                        "type": "string",
+                        "maxLength": 1000,
+                        "example": "Excelente destino turístico, muy recomendado."
+                    }
+                },
+                "type": "object"
+            },
+            "ReviewUpdateRequest": {
+                "title": "Review Update Request",
+                "properties": {
+                    "rating": {
+                        "description": "Calificación del 1 al 5",
+                        "type": "integer",
+                        "maximum": 5,
+                        "minimum": 1,
+                        "example": 4
+                    },
+                    "comment": {
+                        "description": "Comentario opcional",
+                        "type": "string",
+                        "maxLength": 1000,
+                        "example": "Comentario actualizado"
+                    }
+                },
+                "type": "object"
+            },
+            "Destino": {
+                "title": "Destino Turístico",
+                "description": "Representa un destino turístico en la plataforma.",
+                "required": [
+                    "id",
+                    "name",
+                    "slug",
+                    "status"
+                ],
+                "properties": {
+                    "id": {
+                        "description": "ID único del destino.",
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "name": {
+                        "description": "Nombre del destino.",
+                        "type": "string"
+                    },
+                    "slug": {
+                        "description": "Slug único para la URL.",
+                        "type": "string"
+                    },
+                    "short_description": {
+                        "description": "Descripción corta.",
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "description": {
+                        "description": "Descripción completa y detallada.",
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "address": {
+                        "description": "Dirección física del lugar.",
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "latitude": {
+                        "description": "Latitud para el mapa.",
+                        "type": "number",
+                        "format": "float",
+                        "nullable": true
+                    },
+                    "longitude": {
+                        "description": "Longitud para el mapa.",
+                        "type": "number",
+                        "format": "float",
+                        "nullable": true
+                    },
+                    "phone": {
+                        "description": "Teléfono de contacto.",
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "website": {
+                        "description": "Sitio web oficial.",
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "status": {
+                        "description": "Estado de publicación.",
+                        "type": "string",
+                        "enum": [
+                            "published",
+                            "draft",
+                            "pending"
+                        ]
+                    },
+                    "average_rating": {
+                        "description": "Calificación promedio de reseñas (0-5).",
+                        "type": "number",
+                        "format": "float",
+                        "readOnly": true
+                    },
+                    "reviews_count": {
+                        "description": "Número total de reseñas aprobadas.",
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    }
+                },
+                "type": "object"
+            },
+            "Promocion": {
+                "title": "Promocion",
+                "required": [
+                    "id",
+                    "destino_id",
+                    "title",
+                    "start_date",
+                    "end_date",
+                    "is_active"
+                ],
+                "properties": {
+                    "id": {
+                        "description": "ID de la promoción",
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "destino_id": {
+                        "description": "ID del destino asociado",
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "title": {
+                        "description": "Título de la promoción",
+                        "type": "string"
+                    },
+                    "description": {
+                        "description": "Descripción de la promoción",
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "code": {
+                        "description": "Código de descuento",
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "discount_percentage": {
+                        "description": "Porcentaje de descuento",
+                        "type": "number",
+                        "format": "float",
+                        "nullable": true
+                    },
+                    "start_date": {
+                        "description": "Fecha de inicio",
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "end_date": {
+                        "description": "Fecha de fin",
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "is_active": {
+                        "description": "Indica si la promoción está activa",
+                        "type": "boolean"
+                    },
+                    "created_at": {
+                        "description": "Fecha de creación",
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "description": "Fecha de última actualización",
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "destino": {
+                        "$ref": "#/components/schemas/Destino"
                     }
                 },
                 "type": "object"
@@ -948,12 +1529,20 @@
     },
     "tags": [
         {
+            "name": "Reviews",
+            "description": "API Endpoints para gestión de reseñas y calificaciones"
+        },
+        {
             "name": "Authentication",
             "description": "Authentication"
         },
         {
             "name": "Favorites",
             "description": "Favorites"
+        },
+        {
+            "name": "Promociones",
+            "description": "Promociones"
         },
         {
             "name": "Public Content",

@@ -41,60 +41,69 @@
 - ✅ Tarea 30: Crear endpoints en la API para publicar y ver reseñas de un destino
 - ✅ Tarea 31: Escribir tests para el sistema de reseñas y sus políticas de validación
 
+### ✅ FASE 5: SISTEMA DE PROMOCIONES (COMPLETADA 100%)
+- ✅ Tarea 32: Crear modelo `Promocion` con su migración para ofertas temporales.
+- ✅ Tarea 33: Definir la relación entre `Destino` y `Promocion`.
+- ✅ Tarea 34: Crear `PromocionFactory` para datos de prueba.
+- ✅ Tarea 35: Implementar `PromocionResource` en Filament para la gestión completa (CRUD).
+- ✅ Tarea 36: Crear `PromocionController` con endpoints públicos para la API.
+- ✅ Tarea 37: Añadir rutas públicas a la API para `promociones` y `destinos/{id}/promociones`.
+- ✅ Tarea 38: Documentar los nuevos endpoints en Swagger y definir los Schemas correspondientes.
+- ✅ Tarea 39: Crear tests exhaustivos (`PromocionTest.php`) para validar toda la funcionalidad.
+
 ## 🚀 PRÓXIMAS FASES PRIORITARIAS
 
-### 📍 FASE 5: PROMOCIONES Y ESPACIOS DESTACADOS (PRIORIDAD ALTA)
-**Objetivo**: Crear un sistema dual para ofertas temporales y espacios publicitarios premium.
-
-**Tareas**:
-- Tarea 32: Crear modelo Promocion para ofertas temporales
-- Tarea 33: Crear modelo TopDestino para gestionar espacios premium
-- Tarea 34: Crear PromocionResource y TopDestinoResource en Filament
-- Tarea 35: Crear endpoints en la API para obtener promociones activas y destinos "TOP"
-- Tarea 36: Crear comandos programados para desactivar promociones y espacios expirados
-- Tarea 37: Escribir tests para la lógica de promociones y espacios premium
-
-### 📍 FASE 6: BÚSQUEDA AVANZADA (PRIORIDAD MEDIA)
+### 📍 FASE 6: BÚSQUEDA AVANZADA (PRIORIDAD ALTA)
 **Objetivo**: Implementar un motor de búsqueda de texto completo, rápido y tolerante a errores tipográficos.
 
 **Tareas**:
-- Tarea 38: Instalar y configurar Laravel Scout con un driver (ej: Meilisearch)
-- Tarea 39: Añadir el trait Searchable a los modelos Destino y Region
-- Tarea 40: Configurar la sincronización automática de índices mediante observers
-- Tarea 41: Crear un endpoint global GET /api/v1/search?query=....
-- Tarea 42: Escribir tests para el endpoint de búsqueda
+- Tarea 40: Instalar y configurar Laravel Scout con un driver (ej: Meilisearch o base de datos).
+- Tarea 41: Añadir el trait `Searchable` a los modelos `Destino` y `Region`.
+- Tarea 42: Configurar la sincronización automática de índices mediante observers.
+- Tarea 43: Crear un endpoint global `GET /api/v1/search?query=...`
+- Tarea 44: Escribir tests para el endpoint de búsqueda.
+
+### 📍 FASE 7: ESPACIOS DESTACADOS Y TAREAS PROGRAMADAS (PRIORIDAD MEDIA)
+**Objetivo**: Implementar un sistema para destacar destinos y automatizar tareas de mantenimiento.
+
+**Tareas Pendientes (basadas en la Fase 5 original)**:
+- Tarea 45: Crear modelo/lógica para gestionar espacios premium (ej: `TopDestino` o campo `is_top`).
+- Tarea 46: Crear la gestión en `Filament` para estos espacios.
+- Tarea 47: Crear endpoints en la API para obtener los destinos "TOP".
+- Tarea 48: Escribir tests para la lógica de espacios premium.
+- Tarea 49: Crear comandos programados (`cron jobs`) para desactivar promociones expiradas.
 
 ## 🎯 FASES AVANZADAS Y MONETIZACIÓN
 
-### 📍 FASE 7: NOTIFICACIONES DESACOPLADAS
-- Tarea 43: Configurar sistema de notificaciones (ej: reseña aprobada)
-- Tarea 44: Implementar el envío de notificaciones a través de colas (queues)
+### 📍 FASE 8: NOTIFICACIONES DESACOPLADAS
+- Tarea 50: Configurar sistema de notificaciones (ej: reseña aprobada)
+- Tarea 51: Implementar el envío de notificaciones a través de colas (queues)
 
-### 📍 FASE 8: GESTIÓN DE PERFILES AVANZADA
-- Tarea 45: Permitir a usuarios/proveedores editar su perfil vía API
-- Tarea 46: Implementar subida de archivos (logo, PDF) para perfiles de proveedores
+### 📍 FASE 9: GESTIÓN DE PERFILES AVANZADA
+- Tarea 52: Permitir a usuarios/proveedores editar su perfil vía API
+- Tarea 53: Implementar subida de archivos (logo, PDF) para perfiles de proveedores
 
-### 📍 FASE 9: SUSCRIPCIONES Y MONETIZACIÓN
-- Tarea 47: Integrar Laravel Cashier con una pasarela de pago (Stripe)
-- Tarea 48: Definir planes de suscripción con límites
-- Tarea 49: Crear sistema de cupones o descuentos
-- Tarea 50: Crear webhooks para gestionar el estado de las suscripciones
+### 📍 FASE 10: SUSCRIPCIONES Y MONETIZACIÓN
+- Tarea 54: Integrar Laravel Cashier con una pasarela de pago (Stripe)
+- Tarea 55: Definir planes de suscripción con límites
+- Tarea 56: Crear sistema de cupones o descuentos
+- Tarea 57: Crear webhooks para gestionar el estado de las suscripciones
 
-### 📍 FASE 10: AUDITORÍA Y VERSIONADO DE API
-- Tarea 51: Implementar spatie/laravel-activitylog para auditoría
-- Tarea 52: Asegurar que todos los endpoints sigan el prefijo api/v1/
+### 📍 FASE 11: AUDITORÍA Y VERSIONADO DE API
+- Tarea 58: Implementar spatie/laravel-activitylog para auditoría
+- Tarea 59: Asegurar que todos los endpoints sigan el prefijo api/v1/
 
 ## 📈 MÉTRICAS DE PROGRESO
 
-- **Fases Completadas**: 4/10 (40%)
-- **Tareas Completadas**: 31/52 (59.6%)
-- **Funcionalidades Core**: ✅ Características dinámicas, ✅ Geolocalización, ✅ Sistema de Favoritos, ✅ Sistema de Reseñas
-- **Próxima Meta**: Sistema de Promociones (6 tareas)
+- **Fases Completadas**: 5/11 (45%)
+- **Tareas Completadas**: 39/59 (66%)
+- **Funcionalidades Core**: ✅ Características, ✅ Geolocalización, ✅ Favoritos, ✅ Reseñas, ✅ Promociones
+- **Próxima Meta**: Búsqueda Avanzada (5 tareas)
 
 ## 🎯 RECOMENDACIONES DE IMPLEMENTACIÓN
 
-1. **Continuar con Fase 5 (Promociones)** - Genera ingresos y valor para proveedores.
-2. **Seguir con Fase 6 (Búsqueda)** - Mejora drásticamente la experiencia del usuario final.
+1. **Continuar con Fase 6 (Búsqueda)** - Mejora drásticamente la experiencia del usuario final.
+2. **Seguir con Fase 7 (Espacios Destacados)** - Introduce una nueva vía de monetización.
 
 ## 🔧 CONSIDERACIONES TÉCNICAS
 
@@ -104,4 +113,5 @@
 - **Testing**: Cobertura de tests sólida para todas las fases implementadas.
 - **Geolocalización**: Leaflet + OpenStreetMap funcionando correctamente.
 - **Sistema de Favoritos**: Completamente funcional con autenticación.
-- **Sistema de Reseñas**: Moderado, probado y funcional. 
+- **Sistema de Reseñas**: Moderado, probado y funcional.
+- **Sistema de Promociones**: Funcional, probado y documentado. 
