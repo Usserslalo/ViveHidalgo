@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Laravel\Scout\Searchable;
 
 /**
  * @OA\Schema(
@@ -36,7 +37,22 @@ use Illuminate\Support\Str;
  */
 class Destino extends Model
 {
-    use HasFactory;
+    use HasFactory, Searchable;
+
+    /**
+     * Get the indexable data array for the model.
+     *
+     * @return array
+     */
+    public function toSearchableArray()
+    {
+        return [
+            'name' => $this->name,
+            'slug' => $this->slug,
+            'short_description' => $this->short_description,
+            'description' => $this->description,
+        ];
+    }
 
     protected $fillable = [
         'user_id',

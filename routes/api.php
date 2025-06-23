@@ -1,9 +1,15 @@
 <?php
 
+use App\Http\Controllers\Api\Auth\AuthController;
+use App\Http\Controllers\Api\CaracteristicaController;
+use App\Http\Controllers\Api\FavoritoController;
+use App\Http\Controllers\Api\PromocionController;
+use App\Http\Controllers\Api\Public\DestinoController as PublicDestinoController;
+use App\Http\Controllers\Api\ReviewController;
+use App\Http\Controllers\Api\SearchController;
+use App\Http\Controllers\Api\UserController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Api\Auth\AuthController;
-use App\Http\Controllers\Api\UserController;
 
 /*
 |--------------------------------------------------------------------------
@@ -166,6 +172,9 @@ Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
         // Historial
         Route::get('historial', [App\Http\Controllers\Api\HistorialController::class, 'index']);
     });
+
+    // Ruta de Búsqueda Global
+    Route::get('/search', SearchController::class)->name('search');
 });
 
 // Rutas para proveedores (requieren rol provider)
@@ -271,13 +280,13 @@ Route::apiResource('v1/caracteristicas', App\Http\Controllers\Api\Caracteristica
 
 // --- PUBLIC API (No Auth Required) ---
 Route::prefix('v1/public')->name('api.public.')->group(function () {
-    Route::get('destinos', [App\Http\Controllers\Api\Public\DestinoController::class, 'index'])->name('destinos.index');
-    Route::get('destinos/{slug}', [App\Http\Controllers\Api\Public\DestinoController::class, 'show'])->name('destinos.show');
-    Route::get('destinos/{destino}/reviews', [App\Http\Controllers\Api\ReviewController::class, 'getDestinoReviews'])->name('destinos.reviews');
-    Route::get('destinos/{destino}/promociones', [App\Http\Controllers\Api\PromocionController::class, 'forDestino'])->name('destinos.promociones');
+    Route::get('destinos', [PublicDestinoController::class, 'index'])->name('destinos.index');
+    Route::get('destinos/{slug}', [PublicDestinoController::class, 'show'])->name('destinos.show');
+    Route::get('destinos/{destino}/reviews', [ReviewController::class, 'getDestinoReviews'])->name('destinos.reviews');
+    Route::get('destinos/{destino}/promociones', [PromocionController::class, 'forDestino'])->name('destinos.promociones');
 
     // Rutas públicas para promociones
-    Route::get('promociones', [App\Http\Controllers\Api\PromocionController::class, 'index'])->name('promociones.index');
+    Route::get('promociones', [PromocionController::class, 'index'])->name('promociones.index');
     
     // Aquí podrías agregar rutas para regiones y categorías públicas si es necesario
     // Route::get('regions', [App\Http\Controllers\Api\Public\RegionController::class, 'index'])->name('regions.index');
@@ -294,3 +303,68 @@ Route::prefix('v1')->group(function () {
     // ... more sections
 });
 */
+
+// Rutas públicas que no requieren autenticación
+Route::prefix('public')->group(function () {
+    Route::get('destinos', [PublicDestinoController::class, 'index']);
+    Route::get('destinos/{slug}', [PublicDestinoController::class, 'show']);
+    Route::get('destinos/{destino}/reviews', [ReviewController::class, 'getDestinoReviews']);
+    Route::get('promociones', [PromocionController::class, 'index']);
+    Route::get('destinos/{destino}/promociones', [PromocionController::class, 'forDestino']);
+});
+
+Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
+    return $request->user();
+});
+
+Route::prefix('v1')->group(function () {
+
+    // --- Rutas Públicas (no requieren autenticación) ---
+    Route::prefix('public')->group(function () {
+        Route::get('destinos', [PublicDestinoController::class, 'index'])->name('public.destinos.index');
+        Route::get('destinos/{slug}', [PublicDestinoController::class, 'show'])->name('public.destinos.show');
+        Route::get('destinos/{destino}/reviews', [ReviewController::class, 'getDestinoReviews'])->name('public.destinos.reviews');
+        Route::get('promociones', [PromocionController::class, 'index'])->name('public.promociones.index');
+        Route::get('destinos/{destino}/promociones', [PromocionController::class, 'forDestino'])->name('public.destinos.promociones');
+        
+        // Caracteristicas publicas
+        Route::get('caracteristicas/activas', [CaracteristicaController::class, 'activas']);
+        Route::get('caracteristicas/tipo/{tipo}', [CaracteristicaController::class, 'porTipo']);
+        Route::get('caracteristicas', [CaracteristicaController::class, 'index']);
+    });
+
+    // Ruta de Búsqueda Global (Pública)
+    Route::get('search', SearchController::class)->name('search');
+
+    // --- Rutas de Autenticación ---
+    Route::prefix('auth')->group(function () {
+        Route::post('/login', [AuthController::class, 'login']);
+        Route::post('/register', [AuthController::class, 'register']);
+        Route::middleware('auth:sanctum')->post('/logout', [AuthController::class, 'logout']);
+    });
+
+    // --- Rutas de Usuario Autenticado ---
+    Route::middleware('auth:sanctum')->group(function () {
+        // Perfil
+        Route::prefix('user')->group(function () {
+            Route::get('/profile', [UserController::class, 'profile']);
+            Route::put('/profile', [UserController::class, 'updateProfile']);
+            // Rutas de Reviews del usuario
+            Route::apiResource('reviews', ReviewController::class)->except(['index', 'show', 'getForDestino']);
+            Route::get('reviews', [ReviewController::class, 'getUserReviews']);
+        });
+
+        // Favoritos
+        Route::prefix('favoritos')->group(function () {
+            Route::get('/', [FavoritoController::class, 'index']);
+            Route::post('/{destino_id}', [FavoritoController::class, 'add']);
+            Route::delete('/{destino_id}', [FavoritoController::class, 'remove']);
+            Route::get('/check/{destino_id}', [FavoritoController::class, 'check']);
+        });
+    });
+});
+
+// Ruta por defecto de Laravel para obtener el usuario autenticado (opcional, útil para `me`)
+Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
+    return $request->user();
+});
