@@ -58,6 +58,13 @@ class DestinoController extends BaseController
      *          required=false,
      *          @OA\Schema(type="number", format="float")
      *      ),
+     *      @OA\Parameter(
+     *          name="per_page",
+     *          in="query",
+     *          description="Elementos por página (paginación, default: 15)",
+     *          required=false,
+     *          @OA\Schema(type="integer")
+     *      ),
      *      @OA\Response(
      *          response=200,
      *          description="Successful operation",

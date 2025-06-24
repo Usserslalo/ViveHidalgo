@@ -174,6 +174,10 @@ La documentación completa de la API está disponible en:
 - **Swagger UI**: `/api/documentation`
 - **JSON Schema**: `/storage/api-docs/api-docs.json`
 
+### Parámetros de paginación
+- `per_page` (opcional): Número de elementos por página (default: 15)
+- `page` (opcional): Página actual
+
 ### Endpoints Principales
 
 #### Autenticación
@@ -423,3 +427,12 @@ Este backend es una plataforma robusta y extensible para turismo, desarrollada e
 ## Contacto y Soporte
 
 Para dudas, soporte o contribuciones, contactar al equipo de desarrollo o abrir un issue en el repositorio correspondiente.
+
+## ⚡️ Cache en Endpoints Públicos
+
+Los endpoints públicos de listados (`/api/v1/public/regiones`, `/api/v1/public/tags`, `/api/v1/public/destinos`) utilizan cache para mejorar el rendimiento. El cache se actualiza cada 5 minutos y es sensible a los parámetros de consulta (`per_page`, filtros, etc.).
+
+### Limpiar el cache manualmente
+```bash
+php artisan cache:clear
+```

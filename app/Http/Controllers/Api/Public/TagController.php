@@ -19,8 +19,15 @@ class TagController extends BaseController
      * @OA\Get(
      *     path="/api/v1/public/tags",
      *     summary="Lista de tags",
-     *     description="Devuelve todos los tags activos",
+     *     description="Devuelve todos los tags activos. Este endpoint utiliza cache para mejorar el rendimiento. Los datos pueden actualizarse cada 5 minutos.",
      *     tags={"Public Tags"},
+     *     @OA\Parameter(
+     *         name="per_page",
+     *         in="query",
+     *         description="Elementos por página (paginación, default: 15)",
+     *         required=false,
+     *         @OA\Schema(type="integer")
+     *     ),
      *     @OA\Response(
      *         response=200,
      *         description="Operación exitosa",

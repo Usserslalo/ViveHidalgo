@@ -1194,6 +1194,15 @@
                             "type": "number",
                             "format": "float"
                         }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "Elementos por página (paginación, default: 15)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
                     }
                 ],
                 "responses": {
@@ -1429,8 +1438,19 @@
                     "Public Regions"
                 ],
                 "summary": "Lista de regiones",
-                "description": "Devuelve todas las regiones disponibles",
+                "description": "Devuelve todas las regiones disponibles. Este endpoint utiliza cache para mejorar el rendimiento. Los datos pueden actualizarse cada 5 minutos.",
                 "operationId": "ee44a6e7f4ec5403b789672772e8281d",
+                "parameters": [
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "Elementos por página (paginación, default: 15)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "Operación exitosa",
@@ -1514,8 +1534,19 @@
                     "Public Tags"
                 ],
                 "summary": "Lista de tags",
-                "description": "Devuelve todos los tags activos",
+                "description": "Devuelve todos los tags activos. Este endpoint utiliza cache para mejorar el rendimiento. Los datos pueden actualizarse cada 5 minutos.",
                 "operationId": "bbbf75007a9ad993c691a240f35d4541",
+                "parameters": [
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "Elementos por página (paginación, default: 15)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "Operación exitosa",

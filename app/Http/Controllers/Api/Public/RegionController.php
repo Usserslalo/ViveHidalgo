@@ -19,8 +19,15 @@ class RegionController extends BaseController
      * @OA\Get(
      *     path="/api/v1/public/regiones",
      *     summary="Lista de regiones",
-     *     description="Devuelve todas las regiones disponibles",
+     *     description="Devuelve todas las regiones disponibles. Este endpoint utiliza cache para mejorar el rendimiento. Los datos pueden actualizarse cada 5 minutos.",
      *     tags={"Public Regions"},
+     *     @OA\Parameter(
+     *         name="per_page",
+     *         in="query",
+     *         description="Elementos por página (paginación, default: 15)",
+     *         required=false,
+     *         @OA\Schema(type="integer")
+     *     ),
      *     @OA\Response(
      *         response=200,
      *         description="Operación exitosa",
