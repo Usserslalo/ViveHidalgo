@@ -30,7 +30,8 @@ class CaracteristicaController extends BaseController
         // Ordenar por nombre
         $query->orderBy('nombre');
 
-        $caracteristicas = $query->get();
+        $perPage = $request->get('per_page', 15);
+        $caracteristicas = $query->paginate($perPage);
 
         return $this->sendResponse($caracteristicas, 'Características recuperadas con éxito.');
     }

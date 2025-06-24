@@ -16,19 +16,10 @@ class RegionFactory extends Factory
      */
     public function definition(): array
     {
-        $regions = [
-            'Comarca Minera' => 'Una región rica en historia minera y paisajes únicos.',
-            'Sierra Gorda' => 'Montañas imponentes y naturaleza virgen.',
-            'Valle del Mezquital' => 'Tierra de contrastes y tradiciones ancestrales.',
-            'Huasteca Hidalguense' => 'Cultura viva y gastronomía excepcional.',
-            'Altiplano' => 'Paisajes desérticos y cielos infinitos.',
-        ];
-
-        $region = $this->faker->unique()->randomElement(array_keys($regions));
-        
         return [
-            'name' => $region,
-            'description' => $regions[$region],
+            'name' => $this->faker->unique()->city(),
+            'description' => $this->faker->sentence(8),
+            'slug' => $this->faker->unique()->slug . '-' . uniqid(),
         ];
     }
 } 

@@ -13,15 +13,6 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 
 /**
- * @OA\Info(
- *      version="1.0.0",
- *      title="Vive Hidalgo API Documentation",
- *      description="API for the Vive Hidalgo platform, providing endpoints for content management and user interactions.",
- *      @OA\Contact(
- *          email="admin@vivehidalgo.com"
- *      )
- * )
- *
  * @OA\Server(
  *      url=L5_SWAGGER_CONST_HOST,
  *      description="Main API Server"

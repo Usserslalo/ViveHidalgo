@@ -12,9 +12,10 @@ class CategoriaController extends BaseController
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $categorias = Categoria::withCount('destinos')->get();
+        $perPage = $request->get('per_page', 15);
+        $categorias = Categoria::withCount('destinos')->paginate($perPage);
         return $this->successResponse($categorias, 'Categorías obtenidas exitosamente.');
     }
 

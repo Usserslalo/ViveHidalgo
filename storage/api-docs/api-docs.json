@@ -1,10 +1,15 @@
 {
     "openapi": "3.0.0",
     "info": {
-        "title": "Vive Hidalgo API Documentation",
-        "description": "API for the Vive Hidalgo platform, providing endpoints for content management and user interactions.",
+        "title": "Vive Hidalgo API",
+        "description": "API para la plataforma de turismo Vive Hidalgo",
         "contact": {
+            "name": "Soporte Vive Hidalgo",
             "email": "admin@vivehidalgo.com"
+        },
+        "license": {
+            "name": "MIT",
+            "url": "https://opensource.org/licenses/MIT"
         },
         "version": "1.0.0"
     },
@@ -12,9 +17,363 @@
         {
             "url": "http://localhost:8000",
             "description": "Main API Server"
+        },
+        {
+            "url": "http://localhost:8000",
+            "description": "API Server"
         }
     ],
     "paths": {
+        "/api/v1/audit/logs": {
+            "get": {
+                "tags": [
+                    "Audit"
+                ],
+                "summary": "Obtener logs de auditoría",
+                "description": "Retorna los logs de auditoría con filtros y paginación",
+                "operationId": "getAuditLogs",
+                "parameters": [
+                    {
+                        "name": "event_type",
+                        "in": "query",
+                        "description": "Filtrar por tipo de evento",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "user_id",
+                        "in": "query",
+                        "description": "Filtrar por usuario",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "auditable_type",
+                        "in": "query",
+                        "description": "Filtrar por tipo de modelo auditado",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "start_date",
+                        "in": "query",
+                        "description": "Fecha de inicio (Y-m-d)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "end_date",
+                        "in": "query",
+                        "description": "Fecha de fin (Y-m-d)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "Elementos por página",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 15
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Logs obtenidos exitosamente",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Logs obtenidos exitosamente"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "logs": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "$ref": "#/components/schemas/AuditLog"
+                                                    }
+                                                },
+                                                "pagination": {
+                                                    "type": "object"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Acceso denegado"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/audit/stats": {
+            "get": {
+                "tags": [
+                    "Audit"
+                ],
+                "summary": "Obtener estadísticas de auditoría",
+                "description": "Retorna estadísticas y métricas de auditoría",
+                "operationId": "getAuditStats",
+                "parameters": [
+                    {
+                        "name": "days",
+                        "in": "query",
+                        "description": "Número de días para las estadísticas",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 30
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Estadísticas obtenidas exitosamente",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Estadísticas obtenidas exitosamente"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "total_logs": {
+                                                    "type": "integer"
+                                                },
+                                                "events_by_type": {
+                                                    "type": "object"
+                                                },
+                                                "top_users": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "properties": {
+                                                            "user_id": {
+                                                                "type": "integer",
+                                                                "example": 1
+                                                            },
+                                                            "user_name": {
+                                                                "type": "string",
+                                                                "example": "Juan Pérez"
+                                                            },
+                                                            "activity_count": {
+                                                                "type": "integer",
+                                                                "example": 5
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    }
+                                                },
+                                                "recent_activity": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "properties": {
+                                                            "id": {
+                                                                "type": "integer",
+                                                                "example": 1
+                                                            },
+                                                            "event_type": {
+                                                                "type": "string",
+                                                                "example": "created"
+                                                            },
+                                                            "event_description": {
+                                                                "type": "string",
+                                                                "example": "Creó"
+                                                            },
+                                                            "user_name": {
+                                                                "type": "string",
+                                                                "example": "Juan Pérez"
+                                                            },
+                                                            "auditable_name": {
+                                                                "type": "string",
+                                                                "example": "Hotel Real"
+                                                            },
+                                                            "description": {
+                                                                "type": "string",
+                                                                "example": "Creó un destino"
+                                                            },
+                                                            "created_at": {
+                                                                "type": "string",
+                                                                "format": "date-time",
+                                                                "example": "2024-06-24 12:00:00"
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Acceso denegado"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/audit/logs/{id}": {
+            "get": {
+                "tags": [
+                    "Audit"
+                ],
+                "summary": "Obtener log de auditoría específico",
+                "description": "Retorna un log de auditoría específico con todos sus detalles",
+                "operationId": "getAuditLog",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID del log de auditoría",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Log obtenido exitosamente",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Log obtenido exitosamente"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/AuditLog"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Log no encontrado"
+                    },
+                    "403": {
+                        "description": "Acceso denegado"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/audit/logs/clean": {
+            "delete": {
+                "tags": [
+                    "Audit"
+                ],
+                "summary": "Limpiar logs antiguos",
+                "description": "Elimina logs de auditoría más antiguos que el número de días especificado",
+                "operationId": "cleanAuditLogs",
+                "parameters": [
+                    {
+                        "name": "days_to_keep",
+                        "in": "query",
+                        "description": "Número de días a mantener",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 90
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Logs limpiados exitosamente",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Logs limpiados exitosamente"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "deleted_count": {
+                                                    "type": "integer"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Acceso denegado"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/api/v1/auth/register": {
             "post": {
                 "tags": [
@@ -493,6 +852,219 @@
                 ]
             }
         },
+        "/api/v1/media/upload": {
+            "post": {
+                "tags": [
+                    "Media"
+                ],
+                "summary": "Subir imagen",
+                "description": "Sube una imagen y la asocia a un modelo específico",
+                "operationId": "311248825de6d81ab0bcf48f911ede9a",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "file",
+                                    "imageable_type",
+                                    "imageable_id"
+                                ],
+                                "properties": {
+                                    "file": {
+                                        "description": "Archivo de imagen",
+                                        "type": "string",
+                                        "format": "binary"
+                                    },
+                                    "imageable_type": {
+                                        "description": "Tipo de modelo (App\\\\Models\\\\Destino, App\\\\Models\\\\Promocion, etc.)",
+                                        "type": "string"
+                                    },
+                                    "imageable_id": {
+                                        "description": "ID del modelo",
+                                        "type": "integer"
+                                    },
+                                    "alt": {
+                                        "description": "Texto alternativo de la imagen",
+                                        "type": "string"
+                                    },
+                                    "is_main": {
+                                        "description": "Indica si es la imagen principal",
+                                        "type": "boolean"
+                                    },
+                                    "orden": {
+                                        "description": "Orden de la imagen",
+                                        "type": "integer"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Imagen subida exitosamente",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Imagen subida exitosamente"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/Imagen"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Error de validación",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Error de validación"
+                                        },
+                                        "errors": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "No autorizado",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "No autorizado"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/media/{imagen}": {
+            "delete": {
+                "tags": [
+                    "Media"
+                ],
+                "summary": "Eliminar imagen",
+                "description": "Elimina una imagen específica",
+                "operationId": "d3a2d22039ac4e0e20beb1b161d5837c",
+                "parameters": [
+                    {
+                        "name": "imagen",
+                        "in": "path",
+                        "description": "ID de la imagen",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Imagen eliminada exitosamente",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Imagen eliminada exitosamente"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Imagen no encontrada",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Imagen no encontrada"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "No autorizado",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "No autorizado"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/api/v1/public/promociones": {
             "get": {
                 "tags": [
@@ -690,8 +1262,8 @@
                 "tags": [
                     "Public Content"
                 ],
-                "summary": "Get a single destination's details",
-                "description": "Returns details for a single published destination.",
+                "summary": "Get a single destination's details by slug",
+                "description": "Returns details for a single published destination using its slug.",
                 "operationId": "getPublicDestinoBySlug",
                 "parameters": [
                     {
@@ -729,6 +1301,294 @@
                     },
                     "404": {
                         "description": "Destination not found"
+                    }
+                }
+            }
+        },
+        "/api/v1/public/destinos/top": {
+            "get": {
+                "tags": [
+                    "Public Content"
+                ],
+                "summary": "Get list of top destinations",
+                "description": "Returns a list of top destinations that are marked as featured and published.",
+                "operationId": "getTopDestinos",
+                "parameters": [
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "description": "Number of top destinations to return (default: 10, max: 50)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 10,
+                            "maximum": 50
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Destino"
+                                            }
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Destinos TOP recuperados con éxito."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/public/home": {
+            "get": {
+                "tags": [
+                    "Home"
+                ],
+                "summary": "Datos para la página de inicio",
+                "description": "Devuelve destinos top, promociones activas, regiones destacadas, tags populares y recomendaciones.",
+                "operationId": "88fe603aedc581067c3bcef432018185",
+                "responses": {
+                    "200": {
+                        "description": "Operación exitosa",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "top_destinos": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "$ref": "#/components/schemas/Destino"
+                                                    }
+                                                },
+                                                "promociones": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "$ref": "#/components/schemas/Promocion"
+                                                    }
+                                                },
+                                                "regiones_destacadas": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "$ref": "#/components/schemas/Region"
+                                                    }
+                                                },
+                                                "tags_populares": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "$ref": "#/components/schemas/Tag"
+                                                    }
+                                                },
+                                                "recomendaciones": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "$ref": "#/components/schemas/Destino"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Datos de home recuperados con éxito."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/public/regiones": {
+            "get": {
+                "tags": [
+                    "Public Regions"
+                ],
+                "summary": "Lista de regiones",
+                "description": "Devuelve todas las regiones disponibles",
+                "operationId": "ee44a6e7f4ec5403b789672772e8281d",
+                "responses": {
+                    "200": {
+                        "description": "Operación exitosa",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Region"
+                                            }
+                                        },
+                                        "message": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/public/regiones/{slug}": {
+            "get": {
+                "tags": [
+                    "Public Regions"
+                ],
+                "summary": "Detalles de región por slug",
+                "description": "Devuelve los detalles de una región específica usando su slug",
+                "operationId": "d09a49ed5e3ad19afe889219ebdbb9d1",
+                "parameters": [
+                    {
+                        "name": "slug",
+                        "in": "path",
+                        "description": "Slug de la región",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Operación exitosa",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/Region"
+                                        },
+                                        "message": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Región no encontrada"
+                    }
+                }
+            }
+        },
+        "/api/v1/public/tags": {
+            "get": {
+                "tags": [
+                    "Public Tags"
+                ],
+                "summary": "Lista de tags",
+                "description": "Devuelve todos los tags activos",
+                "operationId": "bbbf75007a9ad993c691a240f35d4541",
+                "responses": {
+                    "200": {
+                        "description": "Operación exitosa",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Tag"
+                                            }
+                                        },
+                                        "message": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/public/tags/{slug}": {
+            "get": {
+                "tags": [
+                    "Public Tags"
+                ],
+                "summary": "Detalles de tag por slug",
+                "description": "Devuelve los detalles de un tag específico usando su slug",
+                "operationId": "08ca6aa1458c42138b18d58248cc4d72",
+                "parameters": [
+                    {
+                        "name": "slug",
+                        "in": "path",
+                        "description": "Slug del tag",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Operación exitosa",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/Tag"
+                                        },
+                                        "message": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Tag no encontrado"
                     }
                 }
             }
@@ -1059,6 +1919,483 @@
                 ]
             }
         },
+        "/api/v1/search": {
+            "get": {
+                "tags": [
+                    "Search"
+                ],
+                "summary": "Realizar una búsqueda global",
+                "description": "Busca destinos y regiones que coincidan con el término de búsqueda proporcionado.",
+                "operationId": "search",
+                "parameters": [
+                    {
+                        "name": "query",
+                        "in": "query",
+                        "description": "Término de búsqueda.",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Búsqueda exitosa",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "destinos": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "$ref": "#/components/schemas/Destino"
+                                                    }
+                                                },
+                                                "regiones": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "$ref": "#/components/schemas/Region"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Resultados de la búsqueda recuperados exitosamente."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Solicitud incorrecta (ej. falta el query)"
+                    }
+                }
+            }
+        },
+        "/api/v1/subscriptions/plans": {
+            "get": {
+                "tags": [
+                    "Subscriptions"
+                ],
+                "summary": "Obtener planes de suscripción disponibles",
+                "description": "Retorna todos los planes de suscripción disponibles con sus características y precios",
+                "operationId": "getAvailablePlans",
+                "responses": {
+                    "200": {
+                        "description": "Planes obtenidos exitosamente",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Planes obtenidos exitosamente"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "plans": {
+                                                    "properties": {
+                                                        "basic": {
+                                                            "type": "object"
+                                                        },
+                                                        "premium": {
+                                                            "type": "object"
+                                                        },
+                                                        "enterprise": {
+                                                            "type": "object"
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/subscriptions/my-subscription": {
+            "get": {
+                "tags": [
+                    "Subscriptions"
+                ],
+                "summary": "Obtener suscripción del usuario autenticado",
+                "description": "Retorna la suscripción activa del usuario autenticado",
+                "operationId": "getMySubscription",
+                "responses": {
+                    "200": {
+                        "description": "Suscripción obtenida exitosamente",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Suscripción obtenida exitosamente"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "subscription": {
+                                                    "$ref": "#/components/schemas/Subscription"
+                                                },
+                                                "plan_config": {
+                                                    "type": "object"
+                                                },
+                                                "subscription_stats": {
+                                                    "type": "object"
+                                                },
+                                                "plan_limits": {
+                                                    "type": "object"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "No se encontró suscripción",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "No se encontró suscripción activa"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/subscriptions/subscribe": {
+            "post": {
+                "tags": [
+                    "Subscriptions"
+                ],
+                "summary": "Suscribirse a un plan",
+                "description": "Crea una nueva suscripción para el usuario autenticado",
+                "operationId": "subscribe",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "plan_type",
+                                    "billing_cycle"
+                                ],
+                                "properties": {
+                                    "plan_type": {
+                                        "description": "Tipo de plan: basic, premium, enterprise",
+                                        "type": "string",
+                                        "example": "premium"
+                                    },
+                                    "billing_cycle": {
+                                        "description": "Ciclo de facturación: monthly, quarterly, yearly",
+                                        "type": "string",
+                                        "example": "monthly"
+                                    },
+                                    "auto_renew": {
+                                        "description": "Renovación automática",
+                                        "type": "boolean",
+                                        "example": true
+                                    },
+                                    "payment_method": {
+                                        "description": "Método de pago",
+                                        "type": "string",
+                                        "example": "credit_card"
+                                    },
+                                    "transaction_id": {
+                                        "description": "ID de transacción externa",
+                                        "type": "string",
+                                        "example": "txn_123456789"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Suscripción creada exitosamente",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Suscripción creada exitosamente"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/Subscription"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Error de validación",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Error de validación"
+                                        },
+                                        "errors": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/subscriptions/cancel": {
+            "put": {
+                "tags": [
+                    "Subscriptions"
+                ],
+                "summary": "Cancelar suscripción",
+                "description": "Cancela la suscripción activa del usuario",
+                "operationId": "cancelSubscription",
+                "responses": {
+                    "200": {
+                        "description": "Suscripción cancelada exitosamente",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Suscripción cancelada exitosamente"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/Subscription"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "No se encontró suscripción",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "No se encontró suscripción activa"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/subscriptions/renew": {
+            "put": {
+                "tags": [
+                    "Subscriptions"
+                ],
+                "summary": "Renovar suscripción",
+                "description": "Renueva la suscripción del usuario",
+                "operationId": "renewSubscription",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "transaction_id": {
+                                        "description": "ID de transacción externa",
+                                        "type": "string",
+                                        "example": "txn_123456789"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Suscripción renovada exitosamente",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Suscripción renovada exitosamente"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/Subscription"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "No se encontró suscripción",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "No se encontró suscripción"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/subscriptions/limits": {
+            "get": {
+                "tags": [
+                    "Subscriptions"
+                ],
+                "summary": "Obtener límites del plan actual",
+                "description": "Retorna los límites y uso actual del plan de suscripción",
+                "operationId": "getPlanLimits",
+                "responses": {
+                    "200": {
+                        "description": "Límites obtenidos exitosamente",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Límites obtenidos exitosamente"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "plan_limits": {
+                                                    "type": "object"
+                                                },
+                                                "subscription_stats": {
+                                                    "type": "object"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/api/v1/user/profile": {
             "get": {
                 "tags": [
@@ -1355,6 +2692,77 @@
                 },
                 "type": "object"
             },
+            "AuditLog": {
+                "title": "Audit Log",
+                "required": [
+                    "id",
+                    "event_type",
+                    "user_id",
+                    "created_at"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "event_type": {
+                        "type": "string",
+                        "example": "created"
+                    },
+                    "user_id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "auditable_type": {
+                        "type": "string",
+                        "example": "App\\\\Models\\\\User"
+                    },
+                    "auditable_id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "description": {
+                        "type": "string",
+                        "example": "Creó un destino"
+                    },
+                    "ip_address": {
+                        "type": "string",
+                        "example": "127.0.0.1"
+                    },
+                    "user_agent": {
+                        "type": "string",
+                        "example": "Mozilla/5.0"
+                    },
+                    "url": {
+                        "type": "string",
+                        "example": "/api/v1/destinos"
+                    },
+                    "method": {
+                        "type": "string",
+                        "example": "POST"
+                    },
+                    "old_values": {
+                        "type": "object"
+                    },
+                    "new_values": {
+                        "type": "object"
+                    },
+                    "metadata": {
+                        "type": "object"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2024-06-24T12:00:00Z"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2024-06-24T12:00:00Z"
+                    }
+                },
+                "type": "object"
+            },
             "Destino": {
                 "title": "Destino Turístico",
                 "description": "Representa un destino turístico en la plataforma.",
@@ -1385,6 +2793,16 @@
                     },
                     "description": {
                         "description": "Descripción completa y detallada.",
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "descripcion_corta": {
+                        "description": "Descripción corta para listados.",
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "descripcion_larga": {
+                        "description": "Descripción larga con HTML.",
                         "type": "string",
                         "nullable": true
                     },
@@ -1434,6 +2852,54 @@
                         "description": "Número total de reseñas aprobadas.",
                         "type": "integer",
                         "readOnly": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    }
+                },
+                "type": "object"
+            },
+            "Imagen": {
+                "title": "Imagen",
+                "required": [
+                    "id",
+                    "path",
+                    "imageable_type",
+                    "imageable_id"
+                ],
+                "properties": {
+                    "id": {
+                        "description": "ID único de la imagen",
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "path": {
+                        "description": "Ruta del archivo de imagen",
+                        "type": "string"
+                    },
+                    "alt": {
+                        "description": "Texto alternativo de la imagen",
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "orden": {
+                        "description": "Orden de la imagen",
+                        "type": "integer"
+                    },
+                    "is_main": {
+                        "description": "Indica si es la imagen principal",
+                        "type": "boolean"
+                    },
+                    "url": {
+                        "description": "URL completa de la imagen",
+                        "type": "string"
                     },
                     "created_at": {
                         "type": "string",
@@ -1518,19 +2984,188 @@
                     }
                 },
                 "type": "object"
+            },
+            "Subscription": {
+                "title": "Subscription",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true,
+                        "example": 1
+                    },
+                    "user_id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "plan_type": {
+                        "description": "Tipo de plan: basic, premium, enterprise",
+                        "type": "string",
+                        "example": "premium"
+                    },
+                    "status": {
+                        "description": "Estado: active, cancelled, expired, pending",
+                        "type": "string",
+                        "example": "active"
+                    },
+                    "amount": {
+                        "type": "number",
+                        "format": "float",
+                        "example": 299.99
+                    },
+                    "currency": {
+                        "type": "string",
+                        "example": "MXN"
+                    },
+                    "start_date": {
+                        "type": "string",
+                        "format": "date",
+                        "example": "2025-01-01"
+                    },
+                    "end_date": {
+                        "type": "string",
+                        "format": "date",
+                        "example": "2025-02-01"
+                    },
+                    "next_billing_date": {
+                        "type": "string",
+                        "format": "date",
+                        "example": "2025-02-01",
+                        "nullable": true
+                    },
+                    "billing_cycle": {
+                        "description": "Ciclo de facturación: monthly, quarterly, yearly",
+                        "type": "string",
+                        "example": "monthly"
+                    },
+                    "auto_renew": {
+                        "type": "boolean",
+                        "example": true
+                    },
+                    "payment_method": {
+                        "type": "string",
+                        "example": "credit_card",
+                        "nullable": true
+                    },
+                    "payment_status": {
+                        "description": "Estado del pago: pending, completed, failed",
+                        "type": "string",
+                        "example": "completed"
+                    },
+                    "transaction_id": {
+                        "type": "string",
+                        "example": "txn_123456789",
+                        "nullable": true
+                    },
+                    "features": {
+                        "description": "Características incluidas en el plan",
+                        "type": "object",
+                        "nullable": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    },
+                    "user": {
+                        "$ref": "#/components/schemas/User"
+                    }
+                },
+                "type": "object"
+            },
+            "Tag": {
+                "title": "Tag",
+                "required": [
+                    "id",
+                    "name",
+                    "slug"
+                ],
+                "properties": {
+                    "id": {
+                        "description": "ID único del tag",
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "name": {
+                        "description": "Nombre del tag",
+                        "type": "string"
+                    },
+                    "slug": {
+                        "description": "Slug único del tag",
+                        "type": "string"
+                    },
+                    "color": {
+                        "description": "Color del tag para UI",
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "description": {
+                        "description": "Descripción del tag",
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "is_active": {
+                        "description": "Indica si el tag está activo",
+                        "type": "boolean"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    }
+                },
+                "type": "object"
             }
         },
         "securitySchemes": {
             "bearerAuth": {
                 "type": "http",
                 "scheme": "bearer"
+            },
+            "sanctum": {
+                "type": "http",
+                "bearerFormat": "JWT",
+                "scheme": "bearer"
             }
         }
     },
     "tags": [
         {
+            "name": "Audit",
+            "description": "API Endpoints para auditoría y analíticas"
+        },
+        {
+            "name": "Media",
+            "description": "Endpoints para gestión de medios e imágenes"
+        },
+        {
+            "name": "Home",
+            "description": "Endpoints para la página de inicio pública"
+        },
+        {
+            "name": "Public Regions",
+            "description": "Endpoints públicos para regiones"
+        },
+        {
+            "name": "Public Tags",
+            "description": "Endpoints públicos para tags"
+        },
+        {
             "name": "Reviews",
             "description": "API Endpoints para gestión de reseñas y calificaciones"
+        },
+        {
+            "name": "Subscriptions",
+            "description": "API Endpoints para gestión de suscripciones"
         },
         {
             "name": "Authentication",
@@ -1547,6 +3182,10 @@
         {
             "name": "Public Content",
             "description": "Public Content"
+        },
+        {
+            "name": "Search",
+            "description": "Search"
         },
         {
             "name": "User",

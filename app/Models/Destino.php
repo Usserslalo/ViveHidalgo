@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Laravel\Scout\Searchable;
@@ -23,6 +24,8 @@ use Laravel\Scout\Searchable;
  *     @OA\Property(property="slug", type="string", description="Slug único para la URL."),
  *     @OA\Property(property="short_description", type="string", nullable=true, description="Descripción corta."),
  *     @OA\Property(property="description", type="string", nullable=true, description="Descripción completa y detallada."),
+ *     @OA\Property(property="descripcion_corta", type="string", nullable=true, description="Descripción corta para listados."),
+ *     @OA\Property(property="descripcion_larga", type="string", nullable=true, description="Descripción larga con HTML."),
  *     @OA\Property(property="address", type="string", nullable=true, description="Dirección física del lugar."),
  *     @OA\Property(property="latitude", type="number", format="float", nullable=true, description="Latitud para el mapa."),
  *     @OA\Property(property="longitude", type="number", format="float", nullable=true, description="Longitud para el mapa."),
@@ -51,6 +54,8 @@ class Destino extends Model
             'slug' => $this->slug,
             'short_description' => $this->short_description,
             'description' => $this->description,
+            'descripcion_corta' => $this->descripcion_corta,
+            'descripcion_larga' => $this->descripcion_larga,
         ];
     }
 
@@ -61,6 +66,8 @@ class Destino extends Model
         'slug',
         'short_description',
         'description',
+        'descripcion_corta',
+        'descripcion_larga',
         'address',
         'ubicacion_referencia',
         'latitude',
@@ -72,10 +79,12 @@ class Destino extends Model
         'website',
         'status',
         'is_featured',
+        'is_top',
     ];
 
     protected $casts = [
         'is_featured' => 'boolean',
+        'is_top' => 'boolean',
         'latitude' => 'float',
         'longitude' => 'float',
         'location' => 'array',
@@ -117,6 +126,31 @@ class Destino extends Model
     }
 
     /**
+     * Relación muchos a muchos con tags
+     */
+    public function tags(): BelongsToMany
+    {
+        return $this->belongsToMany(Tag::class, 'destino_tag')
+                    ->withTimestamps();
+    }
+
+    /**
+     * Relación polimórfica con imágenes
+     */
+    public function imagenes(): MorphMany
+    {
+        return $this->morphMany(Imagen::class, 'imageable')->ordered();
+    }
+
+    /**
+     * Obtener la imagen principal
+     */
+    public function imagenPrincipal()
+    {
+        return $this->morphOne(Imagen::class, 'imageable')->where('is_main', true);
+    }
+
+    /**
      * Scope para destinos publicados
      */
     public function scopePublished($query)
@@ -150,6 +184,24 @@ class Destino extends Model
         return $query->whereHas('caracteristicas', function ($q) use ($characteristicIds) {
             $q->whereIn('caracteristicas.id', (array) $characteristicIds);
         });
+    }
+
+    /**
+     * Scope para destinos por tags
+     */
+    public function scopeByTags($query, $tagIds)
+    {
+        return $query->whereHas('tags', function ($q) use ($tagIds) {
+            $q->whereIn('tags.id', (array) $tagIds);
+        });
+    }
+
+    /**
+     * Scope para destinos destacados (TOP)
+     */
+    public function scopeTop($query)
+    {
+        return $query->where('is_top', true);
     }
 
     /**

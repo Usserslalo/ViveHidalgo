@@ -5,6 +5,7 @@ namespace Tests\Feature\Api\Auth;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
+use PHPUnit\Framework\Attributes\Test;
 
 class AuthTest extends TestCase
 {
@@ -18,7 +19,7 @@ class AuthTest extends TestCase
         $this->artisan('db:seed', ['--class' => 'RolePermissionSeeder']);
     }
 
-    /** @test */
+    #[Test]
     public function user_can_register()
     {
         $userData = [
@@ -47,7 +48,7 @@ class AuthTest extends TestCase
         ]);
     }
 
-    /** @test */
+    #[Test]
     public function user_can_login_with_valid_credentials()
     {
         $user = User::factory()->create([
@@ -74,7 +75,7 @@ class AuthTest extends TestCase
             ]);
     }
 
-    /** @test */
+    #[Test]
     public function user_cannot_login_with_invalid_credentials()
     {
         $user = User::factory()->create([
@@ -92,7 +93,7 @@ class AuthTest extends TestCase
         $response->assertStatus(422);
     }
 
-    /** @test */
+    #[Test]
     public function authenticated_user_can_logout()
     {
         $user = User::factory()->create();
@@ -112,7 +113,7 @@ class AuthTest extends TestCase
             ]);
     }
 
-    /** @test */
+    #[Test]
     public function user_can_get_their_profile()
     {
         $user = User::factory()->create();
@@ -137,7 +138,7 @@ class AuthTest extends TestCase
             ]);
     }
 
-    /** @test */
+    #[Test]
     public function user_can_update_their_profile()
     {
         $user = User::factory()->create();
@@ -170,7 +171,7 @@ class AuthTest extends TestCase
         ]);
     }
 
-    /** @test */
+    #[Test]
     public function unauthenticated_user_cannot_access_protected_endpoints()
     {
         $response = $this->getJson('/api/v1/user/profile');
@@ -183,7 +184,7 @@ class AuthTest extends TestCase
         $response->assertStatus(401);
     }
 
-    /** @test */
+    #[Test]
     public function registration_requires_valid_data()
     {
         $response = $this->postJson('/api/v1/auth/register', []);
@@ -202,7 +203,7 @@ class AuthTest extends TestCase
             ->assertJsonValidationErrors(['email', 'password']);
     }
 
-    /** @test */
+    #[Test]
     public function login_requires_valid_data()
     {
         $response = $this->postJson('/api/v1/auth/login', []);

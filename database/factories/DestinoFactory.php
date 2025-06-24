@@ -36,6 +36,8 @@ class DestinoFactory extends Factory
             'whatsapp' => $this->faker->phoneNumber(),
             'email' => $this->faker->email(),
             'website' => $this->faker->url(),
+            'is_featured' => $this->faker->boolean(20), // 20% de probabilidad de ser destacado
+            'is_top' => $this->faker->boolean(10), // 10% de probabilidad de ser TOP
         ];
     }
 
@@ -66,6 +68,16 @@ class DestinoFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'status' => 'pending_review',
+        ]);
+    }
+
+    /**
+     * Indicate that the destination is a top destination.
+     */
+    public function top(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'is_top' => true,
         ]);
     }
 } 

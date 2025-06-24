@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Support\Str;
 use Laravel\Scout\Searchable;
 
@@ -38,6 +39,22 @@ class Region extends Model
     public function destinos(): HasMany
     {
         return $this->hasMany(Destino::class);
+    }
+
+    /**
+     * Relación polimórfica con imágenes
+     */
+    public function imagenes(): MorphMany
+    {
+        return $this->morphMany(Imagen::class, 'imageable')->ordered();
+    }
+
+    /**
+     * Obtener la imagen principal
+     */
+    public function imagenPrincipal()
+    {
+        return $this->morphOne(Imagen::class, 'imageable')->where('is_main', true);
     }
 
     /**

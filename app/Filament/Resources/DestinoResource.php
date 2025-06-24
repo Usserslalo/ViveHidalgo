@@ -68,6 +68,11 @@ class DestinoResource extends Resource
                         Forms\Components\Toggle::make('is_featured')
                             ->required()
                             ->label('¿Es Destacado?'),
+                        
+                        Forms\Components\Toggle::make('is_top')
+                            ->required()
+                            ->label('¿Es Destino TOP?')
+                            ->helperText('Los destinos TOP aparecen en posiciones destacadas'),
                     ])
                     ->columns(2),
 
@@ -165,6 +170,13 @@ class DestinoResource extends Resource
                 Tables\Columns\IconColumn::make('is_featured')
                     ->boolean()
                     ->label('Destacado'),
+                Tables\Columns\IconColumn::make('is_top')
+                    ->boolean()
+                    ->label('TOP')
+                    ->trueIcon('heroicon-o-star')
+                    ->falseIcon('heroicon-o-star')
+                    ->trueColor('warning')
+                    ->falseColor('gray'),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()

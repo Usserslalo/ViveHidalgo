@@ -10,6 +10,7 @@ use App\Models\Region;
 use App\Models\Categoria;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
+use PHPUnit\Framework\Attributes\Test;
 
 class ReviewTest extends TestCase
 {
@@ -35,7 +36,7 @@ class ReviewTest extends TestCase
         ]);
     }
 
-    /** @test */
+    #[Test]
     public function user_can_create_review_for_favorite_destino()
     {
         // Agregar destino a favoritos
@@ -80,7 +81,7 @@ class ReviewTest extends TestCase
         ]);
     }
 
-    /** @test */
+    #[Test]
     public function user_cannot_create_review_for_non_favorite_destino()
     {
         Sanctum::actingAs($this->user);
@@ -99,7 +100,7 @@ class ReviewTest extends TestCase
             ]);
     }
 
-    /** @test */
+    #[Test]
     public function user_cannot_create_multiple_reviews_for_same_destino()
     {
         // Agregar destino a favoritos
@@ -130,7 +131,7 @@ class ReviewTest extends TestCase
             ]);
     }
 
-    /** @test */
+    #[Test]
     public function user_can_update_own_review()
     {
         // Agregar destino a favoritos
@@ -166,7 +167,7 @@ class ReviewTest extends TestCase
         ]);
     }
 
-    /** @test */
+    #[Test]
     public function user_cannot_update_other_user_review()
     {
         $otherUser = User::factory()->create();
@@ -196,7 +197,7 @@ class ReviewTest extends TestCase
             ]);
     }
 
-    /** @test */
+    #[Test]
     public function user_can_delete_own_review()
     {
         $review = Review::create([
@@ -222,7 +223,7 @@ class ReviewTest extends TestCase
         ]);
     }
 
-    /** @test */
+    #[Test]
     public function user_cannot_delete_other_user_review()
     {
         $otherUser = User::factory()->create();
@@ -247,7 +248,7 @@ class ReviewTest extends TestCase
             ]);
     }
 
-    /** @test */
+    #[Test]
     public function user_can_get_own_reviews()
     {
         // Crear algunas reseñas para el usuario
@@ -304,7 +305,7 @@ class ReviewTest extends TestCase
             ]);
     }
 
-    /** @test */
+    #[Test]
     public function public_can_get_approved_reviews_for_destino()
     {
         // Crear reseñas aprobadas y no aprobadas
@@ -363,7 +364,7 @@ class ReviewTest extends TestCase
         $this->assertEquals('Reseña aprobada', $responseData[0]['comment']);
     }
 
-    /** @test */
+    #[Test]
     public function review_validation_requires_rating_between_1_and_5()
     {
         // Agregar destino a favoritos
@@ -396,7 +397,7 @@ class ReviewTest extends TestCase
         $response->assertStatus(200);
     }
 
-    /** @test */
+    #[Test]
     public function review_comment_is_optional()
     {
         // Agregar destino a favoritos
@@ -418,7 +419,7 @@ class ReviewTest extends TestCase
         ]);
     }
 
-    /** @test */
+    #[Test]
     public function review_comment_has_max_length_validation()
     {
         // Agregar destino a favoritos
@@ -436,7 +437,7 @@ class ReviewTest extends TestCase
         $response->assertStatus(422);
     }
 
-    /** @test */
+    #[Test]
     public function destino_average_rating_and_count_are_updated_when_review_is_approved()
     {
         // Agregar destino a favoritos

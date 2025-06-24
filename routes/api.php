@@ -171,6 +171,46 @@ Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
         
         // Historial
         Route::get('historial', [App\Http\Controllers\Api\HistorialController::class, 'index']);
+
+        // Notificaciones
+        Route::prefix('notifications')->group(function () {
+            Route::get('/', [App\Http\Controllers\Api\NotificationController::class, 'index']);
+            Route::get('/stats', [App\Http\Controllers\Api\NotificationController::class, 'stats']);
+            Route::patch('/{id}/read', [App\Http\Controllers\Api\NotificationController::class, 'markAsRead']);
+            Route::patch('/read-all', [App\Http\Controllers\Api\NotificationController::class, 'markAllAsRead']);
+            Route::delete('/{id}', [App\Http\Controllers\Api\NotificationController::class, 'destroy']);
+        });
+
+        // Perfil avanzado
+        Route::prefix('profile')->group(function () {
+            Route::get('/', [App\Http\Controllers\Api\ProfileController::class, 'show']);
+            Route::put('/basic', [App\Http\Controllers\Api\ProfileController::class, 'updateBasic']);
+            Route::put('/provider', [App\Http\Controllers\Api\ProfileController::class, 'updateProvider']);
+            Route::post('/logo', [App\Http\Controllers\Api\ProfileController::class, 'uploadLogo']);
+            Route::post('/license', [App\Http\Controllers\Api\ProfileController::class, 'uploadBusinessLicense']);
+            Route::delete('/logo', [App\Http\Controllers\Api\ProfileController::class, 'deleteLogo']);
+            Route::delete('/license', [App\Http\Controllers\Api\ProfileController::class, 'deleteBusinessLicense']);
+            Route::post('/change-password', [App\Http\Controllers\Api\ProfileController::class, 'changePassword']);
+            Route::delete('/account', [App\Http\Controllers\Api\ProfileController::class, 'deleteAccount']);
+        });
+
+        // Suscripciones
+        Route::prefix('subscriptions')->group(function () {
+            Route::get('/plans', [App\Http\Controllers\Api\SubscriptionController::class, 'getAvailablePlans']);
+            Route::get('/my-subscription', [App\Http\Controllers\Api\SubscriptionController::class, 'getMySubscription']);
+            Route::post('/subscribe', [App\Http\Controllers\Api\SubscriptionController::class, 'subscribe']);
+            Route::put('/cancel', [App\Http\Controllers\Api\SubscriptionController::class, 'cancel']);
+            Route::put('/renew', [App\Http\Controllers\Api\SubscriptionController::class, 'renew']);
+            Route::get('/limits', [App\Http\Controllers\Api\SubscriptionController::class, 'getLimits']);
+        });
+
+        // Auditoría (solo administradores)
+        Route::prefix('audit')->group(function () {
+            Route::get('/logs', [App\Http\Controllers\Api\AuditController::class, 'index']);
+            Route::get('/logs/{id}', [App\Http\Controllers\Api\AuditController::class, 'show']);
+            Route::get('/stats', [App\Http\Controllers\Api\AuditController::class, 'stats']);
+            Route::delete('/logs/clean', [App\Http\Controllers\Api\AuditController::class, 'clean']);
+        });
     });
 
     // Ruta de Búsqueda Global
@@ -281,6 +321,7 @@ Route::apiResource('v1/caracteristicas', App\Http\Controllers\Api\Caracteristica
 // --- PUBLIC API (No Auth Required) ---
 Route::prefix('v1/public')->name('api.public.')->group(function () {
     Route::get('destinos', [PublicDestinoController::class, 'index'])->name('destinos.index');
+    Route::get('destinos/top', [PublicDestinoController::class, 'top'])->name('destinos.top');
     Route::get('destinos/{slug}', [PublicDestinoController::class, 'show'])->name('destinos.show');
     Route::get('destinos/{destino}/reviews', [ReviewController::class, 'getDestinoReviews'])->name('destinos.reviews');
     Route::get('destinos/{destino}/promociones', [PromocionController::class, 'forDestino'])->name('destinos.promociones');
@@ -290,6 +331,7 @@ Route::prefix('v1/public')->name('api.public.')->group(function () {
     
     // Aquí podrías agregar rutas para regiones y categorías públicas si es necesario
     // Route::get('regions', [App\Http\Controllers\Api\Public\RegionController::class, 'index'])->name('regions.index');
+    Route::get('home', [\App\Http\Controllers\Api\Public\HomeController::class, 'index']);
 });
 
 // --- VIVE HIDALGO CONTENT (To be implemented later) ---
@@ -307,6 +349,7 @@ Route::prefix('v1')->group(function () {
 // Rutas públicas que no requieren autenticación
 Route::prefix('public')->group(function () {
     Route::get('destinos', [PublicDestinoController::class, 'index']);
+    Route::get('destinos/top', [PublicDestinoController::class, 'top']);
     Route::get('destinos/{slug}', [PublicDestinoController::class, 'show']);
     Route::get('destinos/{destino}/reviews', [ReviewController::class, 'getDestinoReviews']);
     Route::get('promociones', [PromocionController::class, 'index']);
@@ -322,6 +365,7 @@ Route::prefix('v1')->group(function () {
     // --- Rutas Públicas (no requieren autenticación) ---
     Route::prefix('public')->group(function () {
         Route::get('destinos', [PublicDestinoController::class, 'index'])->name('public.destinos.index');
+        Route::get('destinos/top', [PublicDestinoController::class, 'top'])->name('public.destinos.top');
         Route::get('destinos/{slug}', [PublicDestinoController::class, 'show'])->name('public.destinos.show');
         Route::get('destinos/{destino}/reviews', [ReviewController::class, 'getDestinoReviews'])->name('public.destinos.reviews');
         Route::get('promociones', [PromocionController::class, 'index'])->name('public.promociones.index');
@@ -335,6 +379,9 @@ Route::prefix('v1')->group(function () {
 
     // Ruta de Búsqueda Global (Pública)
     Route::get('search', SearchController::class)->name('search');
+
+    // Planes de suscripción (públicos)
+    Route::get('subscriptions/plans', [App\Http\Controllers\Api\SubscriptionController::class, 'getAvailablePlans']);
 
     // --- Rutas de Autenticación ---
     Route::prefix('auth')->group(function () {
@@ -361,10 +408,60 @@ Route::prefix('v1')->group(function () {
             Route::delete('/{destino_id}', [FavoritoController::class, 'remove']);
             Route::get('/check/{destino_id}', [FavoritoController::class, 'check']);
         });
+
+        // Notificaciones
+        Route::prefix('notifications')->group(function () {
+            Route::get('/', [App\Http\Controllers\Api\NotificationController::class, 'index']);
+            Route::get('/stats', [App\Http\Controllers\Api\NotificationController::class, 'stats']);
+            Route::patch('/{id}/read', [App\Http\Controllers\Api\NotificationController::class, 'markAsRead']);
+            Route::patch('/read-all', [App\Http\Controllers\Api\NotificationController::class, 'markAllAsRead']);
+            Route::delete('/{id}', [App\Http\Controllers\Api\NotificationController::class, 'destroy']);
+        });
+
+        // Perfil avanzado
+        Route::prefix('profile')->group(function () {
+            Route::get('/', [App\Http\Controllers\Api\ProfileController::class, 'show']);
+            Route::put('/basic', [App\Http\Controllers\Api\ProfileController::class, 'updateBasic']);
+            Route::put('/provider', [App\Http\Controllers\Api\ProfileController::class, 'updateProvider']);
+            Route::post('/logo', [App\Http\Controllers\Api\ProfileController::class, 'uploadLogo']);
+            Route::post('/license', [App\Http\Controllers\Api\ProfileController::class, 'uploadBusinessLicense']);
+            Route::delete('/logo', [App\Http\Controllers\Api\ProfileController::class, 'deleteLogo']);
+            Route::delete('/license', [App\Http\Controllers\Api\ProfileController::class, 'deleteBusinessLicense']);
+            Route::post('/change-password', [App\Http\Controllers\Api\ProfileController::class, 'changePassword']);
+            Route::delete('/account', [App\Http\Controllers\Api\ProfileController::class, 'deleteAccount']);
+        });
+
+        // Suscripciones
+        Route::prefix('subscriptions')->group(function () {
+            Route::get('/my-subscription', [App\Http\Controllers\Api\SubscriptionController::class, 'getMySubscription']);
+            Route::post('/subscribe', [App\Http\Controllers\Api\SubscriptionController::class, 'subscribe']);
+            Route::put('/cancel', [App\Http\Controllers\Api\SubscriptionController::class, 'cancel']);
+            Route::put('/renew', [App\Http\Controllers\Api\SubscriptionController::class, 'renew']);
+            Route::get('/limits', [App\Http\Controllers\Api\SubscriptionController::class, 'getLimits']);
+        });
+
+        // Auditoría (solo administradores)
+        Route::prefix('audit')->group(function () {
+            Route::get('/logs', [App\Http\Controllers\Api\AuditController::class, 'index']);
+            Route::get('/logs/{id}', [App\Http\Controllers\Api\AuditController::class, 'show']);
+            Route::get('/stats', [App\Http\Controllers\Api\AuditController::class, 'stats']);
+            Route::delete('/logs/clean', [App\Http\Controllers\Api\AuditController::class, 'clean']);
+        });
     });
 });
 
 // Ruta por defecto de Laravel para obtener el usuario autenticado (opcional, útil para `me`)
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
+});
+
+Route::prefix('v1/public')->group(function () {
+    Route::get('destinos', [App\Http\Controllers\Api\Public\DestinoController::class, 'index'])->name('public.destinos.index');
+    Route::get('destinos/top', [App\Http\Controllers\Api\Public\DestinoController::class, 'top'])->name('public.destinos.top');
+    Route::get('destinos/{slug}', [App\Http\Controllers\Api\Public\DestinoController::class, 'show'])->name('public.destinos.show');
+    Route::get('regiones', [App\Http\Controllers\Api\Public\RegionController::class, 'index'])->name('public.regiones.index');
+    Route::get('regiones/{slug}', [App\Http\Controllers\Api\Public\RegionController::class, 'show'])->name('public.regiones.show');
+    Route::get('tags', [App\Http\Controllers\Api\Public\TagController::class, 'index'])->name('public.tags.index');
+    Route::get('tags/{slug}', [App\Http\Controllers\Api\Public\TagController::class, 'show'])->name('public.tags.show');
+    Route::get('home', [\App\Http\Controllers\Api\Public\HomeController::class, 'index']);
 });

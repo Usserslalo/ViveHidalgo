@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 /**
  * @OA\Schema(
@@ -67,5 +68,21 @@ class Promocion extends Model
     public function destino(): BelongsTo
     {
         return $this->belongsTo(Destino::class);
+    }
+
+    /**
+     * Relación polimórfica con imágenes
+     */
+    public function imagenes(): MorphMany
+    {
+        return $this->morphMany(Imagen::class, 'imageable')->ordered();
+    }
+
+    /**
+     * Obtener la imagen principal
+     */
+    public function imagenPrincipal()
+    {
+        return $this->morphOne(Imagen::class, 'imageable')->where('is_main', true);
     }
 }

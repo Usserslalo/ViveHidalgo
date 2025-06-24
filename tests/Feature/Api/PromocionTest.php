@@ -8,6 +8,7 @@ use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
+use PHPUnit\Framework\Attributes\Test;
 
 class PromocionTest extends TestCase
 {
@@ -23,7 +24,7 @@ class PromocionTest extends TestCase
         $this->destino = Destino::factory()->create(['user_id' => $this->provider->id]);
     }
 
-    /** @test */
+    #[Test]
     public function it_returns_only_active_and_current_promotions()
     {
         // Activa y vigente
@@ -64,7 +65,7 @@ class PromocionTest extends TestCase
             ->assertJsonCount(1, 'data.data');
     }
 
-    /** @test */
+    #[Test]
     public function it_returns_promotions_for_a_specific_destino()
     {
         $otroDestino = Destino::factory()->create();
@@ -93,7 +94,7 @@ class PromocionTest extends TestCase
         $this->assertEquals($this->destino->id, $response->json('data.0.destino_id'));
     }
 
-    /** @test */
+    #[Test]
     public function it_returns_an_empty_list_if_no_promotions_are_current()
     {
         Promocion::factory()->create([

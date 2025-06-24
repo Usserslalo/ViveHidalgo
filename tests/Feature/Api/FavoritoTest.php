@@ -8,6 +8,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 use Spatie\Permission\Models\Role;
+use PHPUnit\Framework\Attributes\Test;
 
 class FavoritoTest extends TestCase
 {
@@ -34,7 +35,7 @@ class FavoritoTest extends TestCase
         ]);
     }
 
-    /** @test */
+    #[Test]
     public function user_can_add_destination_to_favorites()
     {
         Sanctum::actingAs($this->user);
@@ -50,7 +51,7 @@ class FavoritoTest extends TestCase
         $this->assertTrue($this->user->favoritos()->where('destino_id', $this->destino->id)->exists());
     }
 
-    /** @test */
+    #[Test]
     public function user_cannot_add_same_destination_twice_to_favorites()
     {
         Sanctum::actingAs($this->user);
@@ -68,7 +69,7 @@ class FavoritoTest extends TestCase
                 ]);
     }
 
-    /** @test */
+    #[Test]
     public function user_cannot_add_unpublished_destination_to_favorites()
     {
         Sanctum::actingAs($this->user);
@@ -87,7 +88,7 @@ class FavoritoTest extends TestCase
                 ]);
     }
 
-    /** @test */
+    #[Test]
     public function user_can_remove_destination_from_favorites()
     {
         Sanctum::actingAs($this->user);
@@ -106,7 +107,7 @@ class FavoritoTest extends TestCase
         $this->assertFalse($this->user->favoritos()->where('destino_id', $this->destino->id)->exists());
     }
 
-    /** @test */
+    #[Test]
     public function user_cannot_remove_destination_not_in_favorites()
     {
         Sanctum::actingAs($this->user);
@@ -120,7 +121,7 @@ class FavoritoTest extends TestCase
                 ]);
     }
 
-    /** @test */
+    #[Test]
     public function user_can_get_their_favorites_list()
     {
         Sanctum::actingAs($this->user);
@@ -166,7 +167,7 @@ class FavoritoTest extends TestCase
         $this->assertEquals(3, $response->json('data.total'));
     }
 
-    /** @test */
+    #[Test]
     public function user_can_check_if_destination_is_in_favorites()
     {
         Sanctum::actingAs($this->user);
@@ -197,7 +198,7 @@ class FavoritoTest extends TestCase
                 ]);
     }
 
-    /** @test */
+    #[Test]
     public function unauthenticated_user_cannot_access_favorites_endpoints()
     {
         // Intentar añadir a favoritos sin autenticación
@@ -217,7 +218,7 @@ class FavoritoTest extends TestCase
         $response->assertStatus(401);
     }
 
-    /** @test */
+    #[Test]
     public function favorites_list_only_shows_published_destinations()
     {
         Sanctum::actingAs($this->user);
@@ -245,7 +246,7 @@ class FavoritoTest extends TestCase
         $this->assertEquals($publishedDestino->id, $response->json('data.data.0.id'));
     }
 
-    /** @test */
+    #[Test]
     public function favorites_list_includes_related_data()
     {
         Sanctum::actingAs($this->user);

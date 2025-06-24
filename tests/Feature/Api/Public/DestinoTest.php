@@ -8,6 +8,7 @@ use App\Models\Region;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
+use PHPUnit\Framework\Attributes\Test;
 
 class DestinoTest extends TestCase
 {
@@ -21,7 +22,7 @@ class DestinoTest extends TestCase
         $this->artisan('db:seed', ['--class' => 'RolePermissionSeeder']);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_list_published_destinations()
     {
         // Crear datos de prueba
@@ -85,7 +86,7 @@ class DestinoTest extends TestCase
         $this->assertCount(2, $response->json('data.data'));
     }
 
-    /** @test */
+    #[Test]
     public function it_can_filter_destinations_by_region()
     {
         // Crear datos de prueba
@@ -119,7 +120,7 @@ class DestinoTest extends TestCase
         $this->assertEquals($region1->id, $response->json('data.data.0.region.id'));
     }
 
-    /** @test */
+    #[Test]
     public function it_can_filter_destinations_by_category()
     {
         // Crear datos de prueba
@@ -153,7 +154,7 @@ class DestinoTest extends TestCase
         $this->assertContains($categoria1->id, collect($response->json('data.data.0.categorias'))->pluck('id'));
     }
 
-    /** @test */
+    #[Test]
     public function it_can_show_a_published_destination_by_slug()
     {
         // Crear datos de prueba
@@ -197,7 +198,7 @@ class DestinoTest extends TestCase
         $this->assertEquals('test-destination', $response->json('data.slug'));
     }
 
-    /** @test */
+    #[Test]
     public function it_returns_404_for_non_published_destination()
     {
         // Crear un destino no publicado
@@ -219,7 +220,7 @@ class DestinoTest extends TestCase
         $response->assertStatus(404);
     }
 
-    /** @test */
+    #[Test]
     public function it_returns_404_for_non_existent_destination()
     {
         // Intentar acceder a un destino que no existe
