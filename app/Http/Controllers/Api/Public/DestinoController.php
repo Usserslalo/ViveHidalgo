@@ -1839,4 +1839,115 @@ class DestinoController extends BaseController
             'created_at' => $actividad->created_at
         ];
     }
+
+    /**
+     * @OA\Get(
+     *     path="/api/v1/public/destinos/{slug}/gallery",
+     *     operationId="getDestinoGallery",
+     *     tags={"Public Destinos"},
+     *     summary="Obtener galería de imágenes de un destino",
+     *     description="Retorna todas las imágenes del destino ordenadas por el campo 'orden'",
+     *     @OA\Parameter(
+     *         name="slug",
+     *         in="path",
+     *         required=true,
+     *         description="Slug del destino",
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Galería obtenida exitosamente",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="data", type="object",
+     *                 @OA\Property(property="destino", type="object",
+     *                     @OA\Property(property="id", type="integer"),
+     *                     @OA\Property(property="name", type="string"),
+     *                     @OA\Property(property="slug", type="string")
+     *                 ),
+     *                 @OA\Property(property="imagenes", type="array",
+     *                     @OA\Items(
+     *                         type="object",
+     *                         @OA\Property(property="id", type="integer"),
+     *                         @OA\Property(property="path", type="string"),
+     *                         @OA\Property(property="url", type="string"),
+     *                         @OA\Property(property="alt", type="string", nullable=true),
+     *                         @OA\Property(property="orden", type="integer"),
+     *                         @OA\Property(property="is_main", type="boolean"),
+     *                         @OA\Property(property="mime_type", type="string"),
+     *                         @OA\Property(property="size", type="integer"),
+     *                         @OA\Property(property="created_at", type="string", format="date-time")
+     *                     )
+     *                 ),
+     *                 @OA\Property(property="stats", type="object",
+     *                     @OA\Property(property="total_imagenes", type="integer"),
+     *                     @OA\Property(property="imagen_principal", type="integer", nullable=true),
+     *                     @OA\Property(property="tamaño_total", type="integer")
+     *                 )
+     *             ),
+     *             @OA\Property(property="message", type="string", example="Galería obtenida exitosamente.")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Destino no encontrado",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Destino no encontrado.")
+     *         )
+     *     )
+     * )
+     */
+    public function gallery(string $slug): JsonResponse
+    {
+        try {
+            // Buscar el destino
+            $destino = Destino::where('slug', $slug)
+                ->where('status', 'published')
+                ->first();
+
+            if (!$destino) {
+                return $this->sendError('Destino no encontrado.', [], 404);
+            }
+
+            // Crear clave de cache
+            $cacheKey = "destino_gallery_{$slug}";
+
+            return $this->getCachedData($cacheKey, function () use ($destino) {
+                return $this->getDestinoGallery($destino);
+            }, 300); // Cache por 5 minutos
+
+        } catch (\Exception $e) {
+            Log::error('Error getting destino gallery: ' . $e->getMessage());
+            return $this->sendError('Error al obtener la galería: ' . $e->getMessage(), [], 500);
+        }
+    }
+
+    /**
+     * Obtener galería del destino
+     */
+    private function getDestinoGallery(Destino $destino): JsonResponse
+    {
+        // Obtener imágenes ordenadas
+        $imagenes = $destino->imagenes()->orderBy('orden', 'asc')->get();
+
+        // Calcular estadísticas
+        $stats = [
+            'total_imagenes' => $imagenes->count(),
+            'imagen_principal' => $imagenes->where('is_main', true)->first()?->id,
+            'tamaño_total' => $imagenes->sum('size')
+        ];
+
+        $data = [
+            'destino' => [
+                'id' => $destino->id,
+                'name' => $destino->name,
+                'slug' => $destino->slug
+            ],
+            'imagenes' => $imagenes,
+            'stats' => $stats
+        ];
+
+        return $this->sendResponse($data, 'Galería obtenida exitosamente.');
+    }
 } 

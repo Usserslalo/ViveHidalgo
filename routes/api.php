@@ -89,11 +89,19 @@ Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
             Route::patch('{destino_id}/set-main', [GaleriaController::class, 'setMain'])->name('galeria.set-main');
             Route::delete('{destino_id}/{imagen_id}', [GaleriaController::class, 'destroy'])->name('galeria.destroy');
         });
+        
+        // Rutas de galería alternativas (según el plan)
+        Route::prefix('destinos/{id}/gallery')->group(function () {
+            Route::post('reorder', [GaleriaController::class, 'reorder'])->name('destinos.gallery.reorder');
+            Route::post('set-main', [GaleriaController::class, 'setMain'])->name('destinos.gallery.set-main');
+            Route::delete('{image_id}', [GaleriaController::class, 'destroy'])->name('destinos.gallery.destroy');
+        });
     });
 
     // Rutas del proveedor
     Route::prefix('provider')->group(function () {
         Route::get('dashboard', [ProviderController::class, 'dashboard'])->name('provider.dashboard');
+        Route::get('analytics', [ProviderController::class, 'analytics'])->name('provider.analytics');
         
         // Analytics detallados
         Route::get('destinos/{id}/analytics', [ProviderController::class, 'getDestinoAnalytics'])->name('provider.destinos.analytics');
@@ -142,6 +150,12 @@ Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
     
     // Actividades turísticas (proveedores)
     Route::post('provider/destinos/{id}/actividades', [ProviderActividadController::class, 'store'])->name('provider.actividades.store');
+
+    // Rutas de reseñas protegidas
+    Route::prefix('reviews')->group(function () {
+        Route::post('{id}/report', [ReviewController::class, 'report'])->name('reviews.report');
+        Route::post('{id}/reply', [ReviewController::class, 'reply'])->name('reviews.reply');
+    });
 });
 
 // --- AUTHENTICATION ---
@@ -160,7 +174,8 @@ Route::prefix('v1/public')->name('api.public.')->group(function () {
     Route::get('destinos/{slug}', [PublicDestinoController::class, 'show'])->name('destinos.show');
     Route::get('destinos/{slug}/similar', [PublicDestinoController::class, 'similar'])->name('destinos.similar');
     Route::get('destinos/{slug}/stats', [PublicDestinoController::class, 'getStats'])->name('destinos.stats');
-    Route::get('destinos/{slug}/reviews/summary', [PublicDestinoController::class, 'getReviewsSummary'])->name('destinos.reviews.summary');
+    Route::get('destinos/{slug}/gallery', [PublicDestinoController::class, 'gallery'])->name('destinos.gallery');
+    Route::get('destinos/{slug}/reviews/summary', [ReviewController::class, 'summary'])->name('destinos.reviews.summary');
     Route::post('reviews/{id}/report', [PublicDestinoController::class, 'reportReview'])->name('reviews.report');
     Route::get('destinos/{destino}/reviews', [ReviewController::class, 'getDestinoReviews'])->name('destinos.reviews');
     Route::get('destinos/{destino}/promociones', [PromocionController::class, 'forDestino'])->name('destinos.promociones');

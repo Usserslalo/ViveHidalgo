@@ -880,4 +880,115 @@ class ProviderController extends BaseController
 
         return $distribution;
     }
+
+    /**
+     * @OA\Get(
+     *     path="/api/v1/provider/analytics",
+     *     operationId="getProviderAnalytics",
+     *     tags={"Provider Analytics"},
+     *     summary="Obtener analytics generales del proveedor",
+     *     description="Retorna analytics generales de todos los destinos y promociones del proveedor",
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(
+     *         name="period",
+     *         in="query",
+     *         description="Período de análisis (7d, 30d, 90d, 1y)",
+     *         required=false,
+     *         @OA\Schema(type="string", enum={"7d", "30d", "90d", "1y"}, default="30d")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Analytics obtenidos exitosamente",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="data", type="object",
+     *                 @OA\Property(property="overview", type="object",
+     *                     @OA\Property(property="total_destinos", type="integer"),
+     *                     @OA\Property(property="total_promociones", type="integer"),
+     *                     @OA\Property(property="total_views", type="integer"),
+     *                     @OA\Property(property="total_reviews", type="integer"),
+     *                     @OA\Property(property="average_rating", type="number", format="float")
+     *                 ),
+     *                 @OA\Property(property="performance", type="object",
+     *                     @OA\Property(property="views_trend", type="array", @OA\Items(type="object")),
+     *                     @OA\Property(property="reviews_trend", type="array", @OA\Items(type="object"))
+     *                 ),
+     *                 @OA\Property(property="top_destinos", type="array", @OA\Items(type="object")),
+     *                 @OA\Property(property="top_promociones", type="array", @OA\Items(type="object"))
+     *             ),
+     *             @OA\Property(property="message", type="string", example="Analytics obtenidos exitosamente.")
+     *         )
+     *     )
+     * )
+     */
+    public function analytics(Request $request): JsonResponse
+    {
+        try {
+            $user = auth()->user();
+            $period = $request->input('period', '30d');
+
+            // Validar período
+            if (!in_array($period, ['7d', '30d', '90d', '1y'])) {
+                return $this->errorResponse('Período inválido. Use: 7d, 30d, 90d, 1y', 422);
+            }
+
+            // Obtener destinos del proveedor
+            $destinos = Destino::where('user_id', $user->id)->get();
+            $promociones = Promocion::whereIn('destino_id', $destinos->pluck('id'))->get();
+
+            // Overview general
+            $overview = [
+                'total_destinos' => $destinos->count(),
+                'total_promociones' => $promociones->count(),
+                'total_views' => $destinos->sum('visit_count'),
+                'total_reviews' => $destinos->sum('reviews_count'),
+                'average_rating' => $destinos->avg('average_rating') ?? 0
+            ];
+
+            // Tendencias de rendimiento
+            $performance = [
+                'views_trend' => $this->generateDailyData('visitas', $period),
+                'reviews_trend' => $this->generateMonthlyData('reviews', $period)
+            ];
+
+            // Top destinos por visitas
+            $topDestinos = $destinos->sortByDesc('visit_count')
+                ->take(5)
+                ->map(function ($destino) {
+                    return [
+                        'id' => $destino->id,
+                        'name' => $destino->name,
+                        'slug' => $destino->slug,
+                        'visit_count' => $destino->visit_count,
+                        'average_rating' => $destino->average_rating,
+                        'reviews_count' => $destino->reviews_count
+                    ];
+                });
+
+            // Top promociones por rendimiento
+            $topPromociones = $promociones->sortByDesc('created_at')
+                ->take(5)
+                ->map(function ($promocion) {
+                    return [
+                        'id' => $promocion->id,
+                        'titulo' => $promocion->titulo,
+                        'destino_name' => $promocion->destino->name,
+                        'fecha_inicio' => $promocion->fecha_inicio,
+                        'fecha_fin' => $promocion->fecha_fin,
+                        'status' => $promocion->fecha_fin >= now() ? 'active' : 'expired'
+                    ];
+                });
+
+            $data = [
+                'overview' => $overview,
+                'performance' => $performance,
+                'top_destinos' => $topDestinos,
+                'top_promociones' => $topPromociones
+            ];
+
+            return $this->successResponse($data, 'Analytics obtenidos exitosamente.');
+        } catch (\Exception $e) {
+            return $this->errorResponse('Error al obtener analytics: ' . $e->getMessage(), 500);
+        }
+    }
 } 

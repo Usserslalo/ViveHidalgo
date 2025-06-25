@@ -399,4 +399,228 @@ class ReviewController extends BaseController
             return $this->sendError('Error al obtener tus reseñas.', [], 500);
         }
     }
+
+    /**
+     * @OA\Get(
+     *     path="/api/v1/public/destinos/{slug}/reviews/summary",
+     *     operationId="getReviewsSummary",
+     *     tags={"Public Reviews"},
+     *     summary="Obtener resumen de reseñas de un destino",
+     *     description="Retorna un resumen estadístico de las reseñas de un destino",
+     *     @OA\Parameter(
+     *         name="slug",
+     *         in="path",
+     *         required=true,
+     *         description="Slug del destino",
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Resumen obtenido exitosamente",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="data", type="object",
+     *                 @OA\Property(property="destino", type="object",
+     *                     @OA\Property(property="id", type="integer"),
+     *                     @OA\Property(property="name", type="string"),
+     *                     @OA\Property(property="slug", type="string")
+     *                 ),
+     *                 @OA\Property(property="summary", type="object",
+     *                     @OA\Property(property="average_rating", type="number", format="float"),
+     *                     @OA\Property(property="total_reviews", type="integer"),
+     *                     @OA\Property(property="rating_distribution", type="object"),
+     *                     @OA\Property(property="recent_reviews", type="array", @OA\Items(ref="#/components/schemas/Review"))
+     *                 )
+     *             ),
+     *             @OA\Property(property="message", type="string", example="Resumen obtenido exitosamente.")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Destino no encontrado"
+     *     )
+     * )
+     */
+    public function summary(string $slug): JsonResponse
+    {
+        try {
+            $destino = Destino::where('slug', $slug)
+                ->where('status', 'published')
+                ->first();
+
+            if (!$destino) {
+                return $this->errorResponse('Destino no encontrado.', 404);
+            }
+
+            $reviews = $destino->reviews()->where('is_approved', true)->get();
+
+            $summary = [
+                'average_rating' => $destino->average_rating ?? 0,
+                'total_reviews' => $reviews->count(),
+                'rating_distribution' => $reviews->groupBy('rating')
+                    ->map->count()
+                    ->toArray(),
+                'recent_reviews' => $reviews->take(3)
+                    ->map(function ($review) {
+                        return [
+                            'id' => $review->id,
+                            'rating' => $review->rating,
+                            'comment' => $review->comment,
+                            'created_at' => $review->created_at,
+                            'user' => [
+                                'id' => $review->user->id,
+                                'name' => $review->user->name
+                            ]
+                        ];
+                    })
+            ];
+
+            $data = [
+                'destino' => [
+                    'id' => $destino->id,
+                    'name' => $destino->name,
+                    'slug' => $destino->slug
+                ],
+                'summary' => $summary
+            ];
+
+            return $this->successResponse($data, 'Resumen obtenido exitosamente.');
+        } catch (\Exception $e) {
+            return $this->errorResponse('Error al obtener el resumen: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * @OA\Post(
+     *     path="/api/v1/reviews/{id}/report",
+     *     operationId="reportReview",
+     *     tags={"Reviews"},
+     *     summary="Reportar una reseña",
+     *     description="Permite a un usuario reportar una reseña inapropiada",
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="ID de la reseña",
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             @OA\Property(property="reason", type="string", enum={"inappropriate_content","spam","fake_review","harassment","offensive_language","other"}, description="Razón del reporte")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Reporte creado exitosamente",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Reporte enviado exitosamente.")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Error de validación"
+     *     )
+     * )
+     */
+    public function report(Request $request, int $id): JsonResponse
+    {
+        try {
+            $review = Review::findOrFail($id);
+
+            // Verificar que el usuario no está reportando su propia reseña
+            if ($review->user_id === auth()->id()) {
+                return $this->errorResponse('No puedes reportar tu propia reseña.', 422);
+            }
+
+            $request->validate([
+                'reason' => 'required|string|in:' . implode(',', array_keys(ReviewReport::REASONS))
+            ]);
+
+            // Verificar si ya existe un reporte pendiente
+            $existingReport = ReviewReport::where('review_id', $id)
+                ->where('reporter_id', auth()->id())
+                ->where('status', ReviewReport::STATUS_PENDING)
+                ->first();
+
+            if ($existingReport) {
+                return $this->errorResponse('Ya has reportado esta reseña.', 422);
+            }
+
+            // Crear el reporte
+            ReviewReport::create([
+                'review_id' => $id,
+                'reporter_id' => auth()->id(),
+                'reason' => $request->reason,
+                'status' => ReviewReport::STATUS_PENDING
+            ]);
+
+            return $this->successResponse(null, 'Reporte enviado exitosamente.');
+        } catch (\Exception $e) {
+            return $this->errorResponse('Error al enviar el reporte: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * @OA\Post(
+     *     path="/api/v1/reviews/{id}/reply",
+     *     operationId="replyToReview",
+     *     tags={"Reviews"},
+     *     summary="Responder a una reseña",
+     *     description="Permite al propietario del destino responder a una reseña",
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="ID de la reseña",
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             @OA\Property(property="reply", type="string", description="Respuesta a la reseña")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Respuesta agregada exitosamente",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Respuesta agregada exitosamente.")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=403,
+     *         description="No autorizado - No eres el propietario del destino"
+     *     )
+     * )
+     */
+    public function reply(Request $request, int $id): JsonResponse
+    {
+        try {
+            $review = Review::with('destino')->findOrFail($id);
+
+            // Verificar que el usuario es el propietario del destino
+            if ($review->destino->user_id !== auth()->id()) {
+                return $this->errorResponse('No tienes permisos para responder a esta reseña.', 403);
+            }
+
+            $request->validate([
+                'reply' => 'required|string|max:1000'
+            ]);
+
+            // Agregar la respuesta (asumiendo que hay un campo reply en el modelo Review)
+            $review->update([
+                'reply' => $request->reply,
+                'replied_at' => now()
+            ]);
+
+            return $this->successResponse(null, 'Respuesta agregada exitosamente.');
+        } catch (\Exception $e) {
+            return $this->errorResponse('Error al agregar la respuesta: ' . $e->getMessage(), 500);
+        }
+    }
 } 
