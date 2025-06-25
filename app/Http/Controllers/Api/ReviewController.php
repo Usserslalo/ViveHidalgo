@@ -199,7 +199,7 @@ class ReviewController extends BaseController
      * @OA\Get(
      *     path="/api/v1/public/destinos/{destino}/reviews",
      *     operationId="getDestinoReviews",
-     *     tags={"Reviews"},
+     *     tags={"Public Content"},
      *     summary="Obtener reseñas de un destino",
      *     description="Obtiene las reseñas aprobadas de un destino específico. No requiere autenticación.",
      *     @OA\Parameter(
@@ -207,36 +207,158 @@ class ReviewController extends BaseController
      *         in="path",
      *         description="ID del destino",
      *         required=true,
-     *         @OA\Schema(type="integer")
+     *         @OA\Schema(type="integer", minimum=1)
+     *     ),
+     *     @OA\Parameter(
+     *         name="page",
+     *         in="query",
+     *         description="Número de página para paginación",
+     *         required=false,
+     *         @OA\Schema(type="integer", default=1)
+     *     ),
+     *     @OA\Parameter(
+     *         name="per_page",
+     *         in="query",
+     *         description="Número de reseñas por página (máximo 50)",
+     *         required=false,
+     *         @OA\Schema(type="integer", default=10, maximum=50)
+     *     ),
+     *     @OA\Parameter(
+     *         name="rating",
+     *         in="query",
+     *         description="Filtrar por calificación específica (1-5)",
+     *         required=false,
+     *         @OA\Schema(type="integer", minimum=1, maximum=5)
+     *     ),
+     *     @OA\Parameter(
+     *         name="sort",
+     *         in="query",
+     *         description="Ordenar por: 'recent' (más recientes), 'oldest' (más antiguas), 'rating' (mejor calificadas)",
+     *         required=false,
+     *         @OA\Schema(type="string", enum={"recent", "oldest", "rating"}, default="recent")
      *     ),
      *     @OA\Response(
      *         response=200,
      *         description="Reseñas obtenidas exitosamente",
      *         @OA\JsonContent(
+     *             type="object",
      *             @OA\Property(property="success", type="boolean", example=true),
-     *             @OA\Property(property="message", type="string", example="Reseñas obtenidas exitosamente."),
      *             @OA\Property(property="data", type="object",
-     *                 @OA\Property(property="data", type="array", @OA\Items(ref="#/components/schemas/Review")),
-     *                 @OA\Property(property="current_page", type="integer", example=1),
-     *                 @OA\Property(property="per_page", type="integer", example=10),
-     *                 @OA\Property(property="total", type="integer", example=25)
-     *             )
+     *                 @OA\Property(property="destino", type="object",
+     *                     @OA\Property(property="id", type="integer"),
+     *                     @OA\Property(property="name", type="string"),
+     *                     @OA\Property(property="slug", type="string")
+     *                 ),
+     *                 @OA\Property(property="reviews", type="object",
+     *                     @OA\Property(property="current_page", type="integer"),
+     *                     @OA\Property(property="data", type="array",
+     *                         @OA\Items(
+     *                             type="object",
+     *                             @OA\Property(property="id", type="integer"),
+     *                             @OA\Property(property="rating", type="integer"),
+     *                             @OA\Property(property="comment", type="string", nullable=true),
+     *                             @OA\Property(property="created_at", type="string", format="date-time"),
+     *                             @OA\Property(property="user", type="object",
+     *                                 @OA\Property(property="id", type="integer"),
+     *                                 @OA\Property(property="name", type="string")
+     *                             )
+     *                         )
+     *                     ),
+     *                     @OA\Property(property="first_page_url", type="string"),
+     *                     @OA\Property(property="from", type="integer", nullable=true),
+     *                     @OA\Property(property="last_page", type="integer"),
+     *                     @OA\Property(property="last_page_url", type="string"),
+     *                     @OA\Property(property="path", type="string"),
+     *                     @OA\Property(property="per_page", type="integer"),
+     *                     @OA\Property(property="to", type="integer", nullable=true),
+     *                     @OA\Property(property="total", type="integer")
+     *                 ),
+     *                 @OA\Property(property="stats", type="object",
+     *                     @OA\Property(property="average_rating", type="number", format="float"),
+     *                     @OA\Property(property="total_reviews", type="integer"),
+     *                     @OA\Property(property="rating_distribution", type="object",
+     *                         @OA\Property(property="5", type="integer"),
+     *                         @OA\Property(property="4", type="integer"),
+     *                         @OA\Property(property="3", type="integer"),
+     *                         @OA\Property(property="2", type="integer"),
+     *                         @OA\Property(property="1", type="integer")
+     *                     )
+     *                 )
+     *             ),
+     *             @OA\Property(property="message", type="string", example="Reseñas obtenidas exitosamente.")
      *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Destino no encontrado"
      *     )
      * )
      */
-    public function getDestinoReviews(Destino $destino): JsonResponse
+    public function getDestinoReviews(Request $request, Destino $destino): JsonResponse
     {
         try {
-            $reviews = $destino->reviews()
-                ->where('is_approved', true)
-                ->with('user:id,name')
-                ->orderBy('created_at', 'desc')
-                ->paginate(10);
+            // Validar parámetros
+            $request->validate([
+                'page' => 'nullable|integer|min:1',
+                'per_page' => 'nullable|integer|min:1|max:50',
+                'rating' => 'nullable|integer|min:1|max:5',
+                'sort' => 'nullable|in:recent,oldest,rating'
+            ]);
 
-            return $this->sendResponse($reviews, 'Reseñas obtenidas exitosamente.');
+            $perPage = min($request->input('per_page', 10), 50);
+            $sort = $request->input('sort', 'recent');
+
+            // Query base para reseñas aprobadas
+            $query = $destino->reviews()
+                ->where('is_approved', true)
+                ->with('user:id,name');
+
+            // Filtro por calificación
+            if ($request->has('rating')) {
+                $query->where('rating', $request->input('rating'));
+            }
+
+            // Ordenamiento
+            switch ($sort) {
+                case 'oldest':
+                    $query->orderBy('created_at', 'asc');
+                    break;
+                case 'rating':
+                    $query->orderBy('rating', 'desc')->orderBy('created_at', 'desc');
+                    break;
+                default: // recent
+                    $query->orderBy('created_at', 'desc');
+                    break;
+            }
+
+            $reviews = $query->paginate($perPage);
+
+            // Calcular estadísticas
+            $stats = [
+                'average_rating' => $destino->average_rating ?? 0,
+                'total_reviews' => $destino->reviews()->where('is_approved', true)->count(),
+                'rating_distribution' => $destino->reviews()
+                    ->where('is_approved', true)
+                    ->selectRaw('rating, COUNT(*) as count')
+                    ->groupBy('rating')
+                    ->pluck('count', 'rating')
+                    ->toArray()
+            ];
+
+            // Preparar respuesta
+            $responseData = [
+                'destino' => [
+                    'id' => $destino->id,
+                    'name' => $destino->name,
+                    'slug' => $destino->slug
+                ],
+                'reviews' => $reviews,
+                'stats' => $stats
+            ];
+
+            return $this->successResponse($responseData, 'Reseñas obtenidas exitosamente.');
         } catch (\Exception $e) {
-            return $this->sendError('Error al obtener las reseñas.', [], 500);
+            return $this->errorResponse('Error al obtener las reseñas: ' . $e->getMessage(), 500);
         }
     }
 

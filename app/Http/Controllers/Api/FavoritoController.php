@@ -24,14 +24,14 @@ class FavoritoController extends BaseController
      *          in="path",
      *          description="ID of the destination to add to favorites",
      *          required=true,
-     *          @OA\Schema(type="integer")
+     *          @OA\Schema(type="integer", minimum=1)
      *      ),
      *      @OA\Response(
      *          response=200,
      *          description="Destination added to favorites successfully",
      *          @OA\JsonContent(
      *              @OA\Property(property="success", type="boolean", example=true),
-     *              @OA\Property(property="message", type="string", example="Destino añadido a favoritos"),
+     *              @OA\Property(property="message", type="string", example="Destino añadido a favoritos correctamente"),
      *              @OA\Property(property="data", type="object")
      *          )
      *      ),
@@ -49,8 +49,11 @@ class FavoritoController extends BaseController
      *      )
      * )
      */
-    public function addToFavorites(int $destinoId): JsonResponse
+    public function addToFavorites(Request $request, int $destinoId): JsonResponse
     {
+        $request->validate([
+            'destino_id' => 'required|integer|min:1',
+        ]);
         $user = Auth::user();
         
         // Verificar que el destino existe y está publicado
@@ -86,14 +89,14 @@ class FavoritoController extends BaseController
      *          in="path",
      *          description="ID of the destination to remove from favorites",
      *          required=true,
-     *          @OA\Schema(type="integer")
+     *          @OA\Schema(type="integer", minimum=1)
      *      ),
      *      @OA\Response(
      *          response=200,
      *          description="Destination removed from favorites successfully",
      *          @OA\JsonContent(
      *              @OA\Property(property="success", type="boolean", example=true),
-     *              @OA\Property(property="message", type="string", example="Destino removido de favoritos"),
+     *              @OA\Property(property="message", type="string", example="Destino removido de favoritos correctamente"),
      *              @OA\Property(property="data", type="object")
      *          )
      *      ),
@@ -107,8 +110,11 @@ class FavoritoController extends BaseController
      *      )
      * )
      */
-    public function removeFromFavorites(int $destinoId): JsonResponse
+    public function removeFromFavorites(Request $request, int $destinoId): JsonResponse
     {
+        $request->validate([
+            'destino_id' => 'required|integer|min:1',
+        ]);
         $user = Auth::user();
         
         // Verificar si está en favoritos
@@ -152,14 +158,30 @@ class FavoritoController extends BaseController
      *              @OA\Property(property="success", type="boolean", example=true),
      *              @OA\Property(property="data", type="object",
      *                  @OA\Property(property="current_page", type="integer"),
-     *                  @OA\Property(property="data", type="array", @OA\Items(ref="#/components/schemas/Destino")),
+     *                  @OA\Property(property="data", type="array",
+     *                      @OA\Items(
+     *                          type="object",
+     *                          @OA\Property(property="id", type="integer"),
+     *                          @OA\Property(property="titulo", type="string"),
+     *                          @OA\Property(property="slug", type="string"),
+     *                          @OA\Property(property="region", type="string", nullable=true),
+     *                          @OA\Property(property="imagen_principal", type="string", nullable=true),
+     *                          @OA\Property(property="rating", type="number", format="float", nullable=true),
+     *                          @OA\Property(property="reviews_count", type="integer", nullable=true),
+     *                          @OA\Property(property="descripcion_corta", type="string", nullable=true),
+     *                          @OA\Property(property="tags", type="array", @OA\Items(type="string")),
+     *                          @OA\Property(property="caracteristicas", type="array", @OA\Items(type="string")),
+     *                          @OA\Property(property="lat", type="number", format="float", nullable=true),
+     *                          @OA\Property(property="lng", type="number", format="float", nullable=true)
+     *                      )
+     *                  ),
      *                  @OA\Property(property="first_page_url", type="string"),
-     *                  @OA\Property(property="from", type="integer"),
+     *                  @OA\Property(property="from", type="integer", nullable=true),
      *                  @OA\Property(property="last_page", type="integer"),
      *                  @OA\Property(property="last_page_url", type="string"),
      *                  @OA\Property(property="path", type="string"),
      *                  @OA\Property(property="per_page", type="integer"),
-     *                  @OA\Property(property="to", type="integer"),
+     *                  @OA\Property(property="to", type="integer", nullable=true),
      *                  @OA\Property(property="total", type="integer"),
      *              ),
      *              @OA\Property(property="message", type="string")
@@ -178,11 +200,34 @@ class FavoritoController extends BaseController
         $perPage = $request->input('per_page', 15);
         
         $favoritos = $user->favoritos()
-                         ->with(['region', 'categorias', 'caracteristicas' => function ($query) {
-                             $query->activas();
-                         }])
+                         ->with([
+                             'region',
+                             'imagenes' => function ($q) { $q->main(); },
+                             'categorias',
+                             'caracteristicas' => function ($query) { $query->activas(); },
+                             'tags',
+                             'user:id,name'
+                         ])
                          ->where('status', 'published')
                          ->paginate($perPage);
+        
+        // Transformar datos para respuesta optimizada
+        $favoritos->getCollection()->transform(function ($destino) {
+            return [
+                'id' => $destino->id,
+                'titulo' => $destino->name,
+                'slug' => $destino->slug,
+                'region' => $destino->region ? $destino->region->name : null,
+                'imagen_principal' => $destino->imagenes->first() ? $destino->imagenes->first()->url : null,
+                'rating' => $destino->average_rating,
+                'reviews_count' => $destino->reviews_count,
+                'descripcion_corta' => $destino->descripcion_corta ?? $destino->short_description,
+                'tags' => $destino->tags->pluck('name'),
+                'caracteristicas' => $destino->caracteristicas->pluck('nombre'),
+                'lat' => $destino->latitude,
+                'lng' => $destino->longitude,
+            ];
+        });
         
         return $this->successResponse($favoritos, 'Lista de favoritos recuperada correctamente');
     }
@@ -200,7 +245,7 @@ class FavoritoController extends BaseController
      *          in="path",
      *          description="ID of the destination to check",
      *          required=true,
-     *          @OA\Schema(type="integer")
+     *          @OA\Schema(type="integer", minimum=1)
      *      ),
      *      @OA\Response(
      *          response=200,
@@ -219,8 +264,11 @@ class FavoritoController extends BaseController
      *      )
      * )
      */
-    public function checkIfFavorite(int $destinoId): JsonResponse
+    public function checkIfFavorite(Request $request, int $destinoId): JsonResponse
     {
+        $request->validate([
+            'destino_id' => 'required|integer|min:1',
+        ]);
         $user = Auth::user();
         
         $isFavorite = $user->favoritos()->where('destino_id', $destinoId)->exists();
