@@ -68,7 +68,10 @@ class CaracteristicaSeeder extends Seeder
         ];
 
         foreach ($caracteristicas as $caracteristica) {
-            Caracteristica::create($caracteristica);
+            Caracteristica::firstOrCreate(
+                ['slug' => \Illuminate\Support\Str::slug($caracteristica['nombre'])],
+                $caracteristica
+            );
         }
 
         $this->command->info('Características sembradas exitosamente.');

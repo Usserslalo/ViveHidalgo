@@ -26,7 +26,10 @@ class DestinoSeeder extends Seeder
         $provider->assignRole('provider');
 
         // Crear una región si no existe
-        $region = Region::firstOrCreate(['name' => 'Comarca Minera']);
+        $region = Region::firstOrCreate(
+            ['slug' => 'comarca-minera'],
+            ['name' => 'Comarca Minera']
+        );
 
         // Crear 5 destinos asociados al proveedor y la región
         Destino::factory()->count(5)->create([

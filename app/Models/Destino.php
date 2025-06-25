@@ -78,6 +78,9 @@ class Destino extends Model
         'email',
         'website',
         'status',
+        'price_range',
+        'visit_count',
+        'favorite_count',
         'is_featured',
         'is_top',
     ];
@@ -317,5 +320,98 @@ class Destino extends Model
         $this->average_rating = (float) $this->reviews()->where('is_approved', true)->avg('rating') ?: 0;
         $this->reviews_count = $this->reviews()->where('is_approved', true)->count();
         $this->save();
+    }
+
+    /**
+     * Incrementar el contador de visitas
+     */
+    public function incrementVisitCount(): bool
+    {
+        return $this->increment('visit_count');
+    }
+
+    /**
+     * Decrementar el contador de visitas
+     */
+    public function decrementVisitCount(): bool
+    {
+        return $this->decrement('visit_count');
+    }
+
+    /**
+     * Incrementar el contador de favoritos
+     */
+    public function incrementFavoriteCount(): bool
+    {
+        return $this->increment('favorite_count');
+    }
+
+    /**
+     * Decrementar el contador de favoritos
+     */
+    public function decrementFavoriteCount(): bool
+    {
+        return $this->decrement('favorite_count');
+    }
+
+    /**
+     * Actualizar el contador de favoritos basado en la tabla pivot
+     */
+    public function updateFavoriteCount(): void
+    {
+        $this->favorite_count = $this->favoritedBy()->count();
+        $this->save();
+    }
+
+    /**
+     * Scope para filtrar por rango de precios
+     */
+    public function scopeByPriceRange($query, $priceRange)
+    {
+        return $query->where('price_range', $priceRange);
+    }
+
+    /**
+     * Scope para destinos más visitados
+     */
+    public function scopeMostVisited($query, $limit = 10)
+    {
+        return $query->orderBy('visit_count', 'desc')->limit($limit);
+    }
+
+    /**
+     * Scope para destinos más favoritos
+     */
+    public function scopeMostFavorited($query, $limit = 10)
+    {
+        return $query->orderBy('favorite_count', 'desc')->limit($limit);
+    }
+
+    /**
+     * Obtener el texto del rango de precios
+     */
+    public function getPriceRangeTextAttribute(): string
+    {
+        return match($this->price_range) {
+            'gratis' => 'Gratis',
+            'economico' => 'Económico',
+            'moderado' => 'Moderado',
+            'premium' => 'Premium',
+            default => 'No especificado'
+        };
+    }
+
+    /**
+     * Obtener el rango de precios en formato para filtros
+     */
+    public function getPriceRangeValueAttribute(): array
+    {
+        return match($this->price_range) {
+            'gratis' => ['min' => 0, 'max' => 0],
+            'economico' => ['min' => 1, 'max' => 500],
+            'moderado' => ['min' => 501, 'max' => 2000],
+            'premium' => ['min' => 2001, 'max' => null],
+            default => ['min' => null, 'max' => null]
+        };
     }
 }

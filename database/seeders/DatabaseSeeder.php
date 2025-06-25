@@ -20,6 +20,7 @@ class DatabaseSeeder extends Seeder
             CaracteristicaSeeder::class,
             UserSeeder::class,
             DestinoSeeder::class,
+            ReviewReportSeeder::class,
         ]);
 
         // Crear usuario administrador si no existe

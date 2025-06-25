@@ -38,4 +38,36 @@ class Review extends Model
     {
         return $this->belongsTo(Destino::class);
     }
+
+    /**
+     * Get the reports for this review.
+     */
+    public function reports()
+    {
+        return $this->hasMany(ReviewReport::class);
+    }
+
+    /**
+     * Get the pending reports for this review.
+     */
+    public function pendingReports()
+    {
+        return $this->hasMany(ReviewReport::class)->pending();
+    }
+
+    /**
+     * Check if this review has any pending reports.
+     */
+    public function hasPendingReports(): bool
+    {
+        return $this->pendingReports()->exists();
+    }
+
+    /**
+     * Get the count of pending reports.
+     */
+    public function getPendingReportsCountAttribute(): int
+    {
+        return $this->pendingReports()->count();
+    }
 }
