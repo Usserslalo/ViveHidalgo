@@ -53,7 +53,7 @@ return new class extends Migration
         // Tabla pivot para actividades y categorías
         Schema::create('actividad_categoria', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('actividad_id')->constrained()->onDelete('cascade');
+            $table->foreignId('actividad_id')->constrained('actividades')->onDelete('cascade');
             $table->foreignId('categoria_id')->constrained()->onDelete('cascade');
             $table->timestamps();
 
@@ -63,7 +63,7 @@ return new class extends Migration
         // Tabla pivot para actividades y características
         Schema::create('actividad_caracteristica', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('actividad_id')->constrained()->onDelete('cascade');
+            $table->foreignId('actividad_id')->constrained('actividades')->onDelete('cascade');
             $table->foreignId('caracteristica_id')->constrained()->onDelete('cascade');
             $table->timestamps();
 
@@ -73,7 +73,7 @@ return new class extends Migration
         // Tabla pivot para actividades y tags
         Schema::create('actividad_tag', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('actividad_id')->constrained()->onDelete('cascade');
+            $table->foreignId('actividad_id')->constrained('actividades')->onDelete('cascade');
             $table->foreignId('tag_id')->constrained()->onDelete('cascade');
             $table->timestamps();
 

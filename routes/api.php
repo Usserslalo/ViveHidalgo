@@ -23,6 +23,7 @@ use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\Provider\EventoController as ProviderEventoController;
 use App\Http\Controllers\Api\Public\EventoController as PublicEventoController;
 use App\Http\Controllers\Api\Provider\ActividadController as ProviderActividadController;
+use App\Http\Controllers\Api\PaymentController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -142,6 +143,15 @@ Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
         Route::post('update-payment-method', [SubscriptionController::class, 'updatePaymentMethod'])->name('subscription.update-payment-method');
     });
 
+    // Rutas de pagos y facturación
+    Route::prefix('payments')->group(function () {
+        Route::post('create-checkout-session', [PaymentController::class, 'createCheckoutSession'])->name('payments.create-checkout');
+        Route::get('invoices', [PaymentController::class, 'getInvoices'])->name('payments.invoices');
+        Route::post('update-payment-method', [PaymentController::class, 'updatePaymentMethod'])->name('payments.update-payment-method');
+        Route::get('payment-methods', [PaymentController::class, 'getPaymentMethods'])->name('payments.payment-methods');
+        Route::delete('payment-methods/{paymentMethod}', [PaymentController::class, 'deletePaymentMethod'])->name('payments.delete-payment-method');
+    });
+
     // Ruta de Búsqueda Global
     Route::get('/search', SearchController::class)->name('search');
 
@@ -166,6 +176,11 @@ Route::prefix('v1/auth')->group(function () {
     Route::post('login', [AuthController::class, 'login'])->name('api.auth.login');
     Route::post('forgot-password', [AuthController::class, 'forgotPassword'])->name('api.auth.forgot-password');
     Route::post('reset-password', [AuthController::class, 'resetPassword'])->name('api.auth.reset-password');
+});
+
+// --- WEBHOOKS (No Auth Required) ---
+Route::prefix('v1')->group(function () {
+    Route::post('payments/webhook', [PaymentController::class, 'webhook'])->name('payments.webhook');
 });
 
 // --- PUBLIC API (No Auth Required) ---
@@ -266,4 +281,17 @@ Route::middleware(['auth:sanctum'])->group(function () {
     
     // Eventos turísticos (proveedores)
     Route::post('provider/eventos', [ProviderEventoController::class, 'store'])->name('provider.eventos.store');
+});
+
+// --- STRIPE DEMO ROUTES (Para fines educativos) ---
+Route::prefix('v1/stripe-demo')->name('stripe.demo.')->group(function () {
+    Route::get('publishable-key', [App\Http\Controllers\Api\StripeDemoController::class, 'getPublishableKey'])->name('publishable-key');
+    
+    // Rutas protegidas
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::post('create-checkout', [App\Http\Controllers\Api\StripeDemoController::class, 'createSimpleCheckout'])->name('create-checkout');
+        Route::post('process-payment', [App\Http\Controllers\Api\StripeDemoController::class, 'processPayment'])->name('process-payment');
+        Route::get('payment-methods', [App\Http\Controllers\Api\StripeDemoController::class, 'getPaymentMethods'])->name('payment-methods');
+        Route::get('customer-info', [App\Http\Controllers\Api\StripeDemoController::class, 'getCustomerInfo'])->name('customer-info');
+    });
 });

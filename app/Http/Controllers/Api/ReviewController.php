@@ -43,7 +43,17 @@ class ReviewController extends BaseController
      *         @OA\JsonContent(
      *             @OA\Property(property="success", type="boolean", example=true),
      *             @OA\Property(property="message", type="string", example="Reseña creada exitosamente. Pendiente de aprobación."),
-     *             @OA\Property(property="data", ref="#/components/schemas/Review")
+     *             @OA\Property(property="data", type="object",
+     *                 @OA\Property(property="id", type="integer"),
+     *                 @OA\Property(property="rating", type="integer"),
+     *                 @OA\Property(property="comment", type="string", nullable=true),
+     *                 @OA\Property(property="is_approved", type="boolean"),
+     *                 @OA\Property(property="created_at", type="string", format="date-time"),
+     *                 @OA\Property(property="user", type="object",
+     *                     @OA\Property(property="id", type="integer"),
+     *                     @OA\Property(property="name", type="string")
+     *                 )
+     *             )
      *         )
      *     ),
      *     @OA\Response(
@@ -106,7 +116,10 @@ class ReviewController extends BaseController
      *     ),
      *     @OA\RequestBody(
      *         required=true,
-     *         @OA\JsonContent(ref="#/components/schemas/ReviewUpdateRequest")
+     *         @OA\JsonContent(
+     *             @OA\Property(property="rating", type="integer", minimum=1, maximum=5, example=4, description="Calificación del 1 al 5"),
+     *             @OA\Property(property="comment", type="string", maxLength=1000, example="Comentario actualizado", description="Comentario opcional")
+     *         )
      *     ),
      *     @OA\Response(
      *         response=200,
@@ -114,7 +127,17 @@ class ReviewController extends BaseController
      *         @OA\JsonContent(
      *             @OA\Property(property="success", type="boolean", example=true),
      *             @OA\Property(property="message", type="string", example="Reseña actualizada exitosamente."),
-     *             @OA\Property(property="data", ref="#/components/schemas/Review")
+     *             @OA\Property(property="data", type="object",
+     *                 @OA\Property(property="id", type="integer"),
+     *                 @OA\Property(property="rating", type="integer"),
+     *                 @OA\Property(property="comment", type="string", nullable=true),
+     *                 @OA\Property(property="is_approved", type="boolean"),
+     *                 @OA\Property(property="created_at", type="string", format="date-time"),
+     *                 @OA\Property(property="user", type="object",
+     *                     @OA\Property(property="id", type="integer"),
+     *                     @OA\Property(property="name", type="string")
+     *                 )
+     *             )
      *         )
      *     ),
      *     @OA\Response(
@@ -377,7 +400,20 @@ class ReviewController extends BaseController
      *             @OA\Property(property="success", type="boolean", example=true),
      *             @OA\Property(property="message", type="string", example="Tus reseñas obtenidas exitosamente."),
      *             @OA\Property(property="data", type="object",
-     *                 @OA\Property(property="data", type="array", @OA\Items(ref="#/components/schemas/Review")),
+     *                 @OA\Property(property="data", type="array", 
+     *                     @OA\Items(
+     *                         type="object",
+     *                         @OA\Property(property="id", type="integer"),
+     *                         @OA\Property(property="rating", type="integer"),
+     *                         @OA\Property(property="comment", type="string", nullable=true),
+     *                         @OA\Property(property="is_approved", type="boolean"),
+     *                         @OA\Property(property="created_at", type="string", format="date-time"),
+     *                         @OA\Property(property="destino", type="object",
+     *                             @OA\Property(property="id", type="integer"),
+     *                             @OA\Property(property="name", type="string")
+     *                         )
+     *                     )
+     *                 ),
      *                 @OA\Property(property="current_page", type="integer", example=1),
      *                 @OA\Property(property="per_page", type="integer", example=10),
      *                 @OA\Property(property="total", type="integer", example=5)
@@ -397,96 +433,6 @@ class ReviewController extends BaseController
             return $this->sendResponse($reviews, 'Tus reseñas obtenidas exitosamente.');
         } catch (\Exception $e) {
             return $this->sendError('Error al obtener tus reseñas.', [], 500);
-        }
-    }
-
-    /**
-     * @OA\Get(
-     *     path="/api/v1/public/destinos/{slug}/reviews/summary",
-     *     operationId="getReviewsSummary",
-     *     tags={"Public Reviews"},
-     *     summary="Obtener resumen de reseñas de un destino",
-     *     description="Retorna un resumen estadístico de las reseñas de un destino",
-     *     @OA\Parameter(
-     *         name="slug",
-     *         in="path",
-     *         required=true,
-     *         description="Slug del destino",
-     *         @OA\Schema(type="string")
-     *     ),
-     *     @OA\Response(
-     *         response=200,
-     *         description="Resumen obtenido exitosamente",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="success", type="boolean", example=true),
-     *             @OA\Property(property="data", type="object",
-     *                 @OA\Property(property="destino", type="object",
-     *                     @OA\Property(property="id", type="integer"),
-     *                     @OA\Property(property="name", type="string"),
-     *                     @OA\Property(property="slug", type="string")
-     *                 ),
-     *                 @OA\Property(property="summary", type="object",
-     *                     @OA\Property(property="average_rating", type="number", format="float"),
-     *                     @OA\Property(property="total_reviews", type="integer"),
-     *                     @OA\Property(property="rating_distribution", type="object"),
-     *                     @OA\Property(property="recent_reviews", type="array", @OA\Items(ref="#/components/schemas/Review"))
-     *                 )
-     *             ),
-     *             @OA\Property(property="message", type="string", example="Resumen obtenido exitosamente.")
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=404,
-     *         description="Destino no encontrado"
-     *     )
-     * )
-     */
-    public function summary(string $slug): JsonResponse
-    {
-        try {
-            $destino = Destino::where('slug', $slug)
-                ->where('status', 'published')
-                ->first();
-
-            if (!$destino) {
-                return $this->errorResponse('Destino no encontrado.', 404);
-            }
-
-            $reviews = $destino->reviews()->where('is_approved', true)->get();
-
-            $summary = [
-                'average_rating' => $destino->average_rating ?? 0,
-                'total_reviews' => $reviews->count(),
-                'rating_distribution' => $reviews->groupBy('rating')
-                    ->map->count()
-                    ->toArray(),
-                'recent_reviews' => $reviews->take(3)
-                    ->map(function ($review) {
-                        return [
-                            'id' => $review->id,
-                            'rating' => $review->rating,
-                            'comment' => $review->comment,
-                            'created_at' => $review->created_at,
-                            'user' => [
-                                'id' => $review->user->id,
-                                'name' => $review->user->name
-                            ]
-                        ];
-                    })
-            ];
-
-            $data = [
-                'destino' => [
-                    'id' => $destino->id,
-                    'name' => $destino->name,
-                    'slug' => $destino->slug
-                ],
-                'summary' => $summary
-            ];
-
-            return $this->successResponse($data, 'Resumen obtenido exitosamente.');
-        } catch (\Exception $e) {
-            return $this->errorResponse('Error al obtener el resumen: ' . $e->getMessage(), 500);
         }
     }
 
@@ -621,6 +567,55 @@ class ReviewController extends BaseController
             return $this->successResponse(null, 'Respuesta agregada exitosamente.');
         } catch (\Exception $e) {
             return $this->errorResponse('Error al agregar la respuesta: ' . $e->getMessage(), 500);
+        }
+    }
+
+    public function summary(string $slug): JsonResponse
+    {
+        try {
+            $destino = Destino::where('slug', $slug)
+                ->where('status', 'published')
+                ->first();
+
+            if (!$destino) {
+                return $this->errorResponse('Destino no encontrado.', 404);
+            }
+
+            $reviews = $destino->reviews()->where('is_approved', true)->get();
+
+            $summary = [
+                'average_rating' => $destino->average_rating ?? 0,
+                'total_reviews' => $reviews->count(),
+                'rating_distribution' => $reviews->groupBy('rating')
+                    ->map->count()
+                    ->toArray(),
+                'recent_reviews' => $reviews->take(3)
+                    ->map(function ($review) {
+                        return [
+                            'id' => $review->id,
+                            'rating' => $review->rating,
+                            'comment' => $review->comment,
+                            'created_at' => $review->created_at,
+                            'user' => [
+                                'id' => $review->user->id,
+                                'name' => $review->user->name
+                            ]
+                        ];
+                    })
+            ];
+
+            $data = [
+                'destino' => [
+                    'id' => $destino->id,
+                    'name' => $destino->name,
+                    'slug' => $destino->slug
+                ],
+                'summary' => $summary
+            ];
+
+            return $this->successResponse($data, 'Resumen obtenido exitosamente.');
+        } catch (\Exception $e) {
+            return $this->errorResponse('Error al obtener el resumen: ' . $e->getMessage(), 500);
         }
     }
 } 

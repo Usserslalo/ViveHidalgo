@@ -10,6 +10,7 @@ use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
+use App\Services\StripeService;
 
 class User extends Authenticatable implements FilamentUser
 {
@@ -34,6 +35,7 @@ class User extends Authenticatable implements FilamentUser
         'profile_photo',
         'is_active',
         'email_verified_at',
+        'stripe_customer_id',
         // Campos de proveedor
         'company_name',
         'company_description',
@@ -110,6 +112,30 @@ class User extends Authenticatable implements FilamentUser
     public function subscription()
     {
         return $this->hasOne(Subscription::class, 'user_id');
+    }
+
+    /**
+     * Relación con facturas del usuario
+     */
+    public function invoices()
+    {
+        return $this->hasMany(Invoice::class, 'user_id');
+    }
+
+    /**
+     * Relación con métodos de pago del usuario
+     */
+    public function paymentMethods()
+    {
+        return $this->hasMany(PaymentMethod::class, 'user_id');
+    }
+
+    /**
+     * Obtener el método de pago por defecto del usuario
+     */
+    public function defaultPaymentMethod()
+    {
+        return $this->hasOne(PaymentMethod::class, 'user_id')->where('is_default', true);
     }
 
     /**
@@ -389,5 +415,89 @@ class User extends Authenticatable implements FilamentUser
             'can_create_destino' => $this->canCreateDestino(),
             'can_create_promocion' => $this->canCreatePromocion(),
         ];
+    }
+
+    /**
+     * Crear o obtener cliente de Stripe
+     */
+    public function createOrGetStripeCustomer()
+    {
+        if ($this->stripe_customer_id) {
+            return app(StripeService::class)->getCustomer($this->stripe_customer_id);
+        }
+
+        $stripeService = app(StripeService::class);
+        $customer = $stripeService->createCustomer($this);
+        
+        $this->update(['stripe_customer_id' => $customer->id]);
+        
+        return $customer;
+    }
+
+    /**
+     * Suscribirse a un plan
+     */
+    public function subscribeToPlan(string $planType, string $billingCycle = 'monthly'): array
+    {
+        // Validar que no tenga suscripción activa
+        if ($this->hasActiveSubscription()) {
+            throw new \Exception('El usuario ya tiene una suscripción activa');
+        }
+
+        // Validar que tenga método de pago
+        if (!$this->defaultPaymentMethod()->exists()) {
+            throw new \Exception('El usuario debe tener un método de pago configurado');
+        }
+
+        $stripeService = app(StripeService::class);
+        
+        return $stripeService->createCheckoutSession([
+            'plan_type' => $planType,
+            'billing_cycle' => $billingCycle,
+        ]);
+    }
+
+    /**
+     * Cancelar suscripción activa
+     */
+    public function cancelSubscription(): bool
+    {
+        $subscription = $this->getActiveSubscription();
+        
+        if (!$subscription) {
+            throw new \Exception('No hay suscripción activa para cancelar');
+        }
+
+        return $subscription->cancel();
+    }
+
+    /**
+     * Renovar suscripción
+     */
+    public function renewSubscription(): bool
+    {
+        $subscription = $this->subscription;
+        
+        if (!$subscription || $subscription->isActive()) {
+            throw new \Exception('No hay suscripción para renovar o ya está activa');
+        }
+
+        return $subscription->renew();
+    }
+
+    /**
+     * Verificar si tiene método de pago por defecto
+     */
+    public function hasDefaultPaymentMethod(): bool
+    {
+        return $this->defaultPaymentMethod()->exists();
+    }
+
+    /**
+     * Obtener método de pago por defecto
+     */
+    public function getDefaultPaymentMethod()
+    {
+        return $this->defaultPaymentMethod()->first();
     }
 }

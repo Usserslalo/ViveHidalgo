@@ -1,14 +1,18 @@
 <?php
 
-namespace App\Filament\Resources;
+namespace App\Filament\Admin\Resources;
 
-use App\Filament\Resources\SubscriptionResource\Pages;
+use App\Filament\Admin\Resources\SubscriptionResource\Pages;
 use App\Models\Subscription;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\Filter;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
@@ -18,7 +22,7 @@ class SubscriptionResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-credit-card';
 
-    protected static ?string $navigationGroup = 'Gestión de Suscripciones';
+    protected static ?string $navigationGroup = 'Facturación';
 
     protected static ?string $navigationLabel = 'Suscripciones';
 
@@ -39,7 +43,8 @@ class SubscriptionResource extends Resource
                             ->searchable()
                             ->preload()
                             ->required()
-                            ->label('Usuario'),
+                            ->label('Usuario')
+                            ->helperText('Usuario propietario de la suscripción'),
 
                         Forms\Components\Select::make('plan_type')
                             ->options([
@@ -49,13 +54,14 @@ class SubscriptionResource extends Resource
                             ])
                             ->required()
                             ->label('Tipo de Plan')
-                            ->reactive()
+                            ->live()
                             ->afterStateUpdated(function ($state, callable $set) {
                                 if ($state) {
                                     $config = Subscription::getPlanConfig($state);
                                     $set('amount', $config['price']);
                                 }
-                            }),
+                            })
+                            ->helperText('Tipo de plan de suscripción'),
 
                         Forms\Components\Select::make('status')
                             ->options([
@@ -65,32 +71,49 @@ class SubscriptionResource extends Resource
                                 Subscription::STATUS_PENDING => 'Pendiente',
                             ])
                             ->required()
-                            ->label('Estado'),
+                            ->label('Estado')
+                            ->helperText('Estado actual de la suscripción'),
 
                         Forms\Components\TextInput::make('amount')
                             ->numeric()
                             ->prefix('$')
                             ->required()
-                            ->label('Monto'),
+                            ->minValue(0)
+                            ->step(0.01)
+                            ->placeholder('0.00')
+                            ->helperText('Monto de la suscripción')
+                            ->label('Monto')
+                            ->validationMessages([
+                                'min' => 'El monto debe ser mayor o igual a 0',
+                                'numeric' => 'El monto debe ser un número válido',
+                            ]),
 
                         Forms\Components\TextInput::make('currency')
-                            ->default('MXN')
+                            ->default('mxn')
                             ->maxLength(3)
-                            ->label('Moneda'),
+                            ->placeholder('mxn')
+                            ->helperText('Código de moneda (ej: mxn, usd)')
+                            ->label('Moneda')
+                            ->validationMessages([
+                                'max' => 'El código de moneda debe tener máximo 3 caracteres',
+                            ]),
                     ])->columns(2),
 
                 Forms\Components\Section::make('Fechas y Ciclo de Facturación')
                     ->schema([
                         Forms\Components\DatePicker::make('start_date')
                             ->required()
-                            ->label('Fecha de Inicio'),
+                            ->label('Fecha de Inicio')
+                            ->helperText('Fecha de inicio de la suscripción'),
 
                         Forms\Components\DatePicker::make('end_date')
                             ->required()
-                            ->label('Fecha de Fin'),
+                            ->label('Fecha de Fin')
+                            ->helperText('Fecha de finalización de la suscripción'),
 
                         Forms\Components\DatePicker::make('next_billing_date')
-                            ->label('Próxima Facturación'),
+                            ->label('Próxima Facturación')
+                            ->helperText('Fecha de la próxima facturación'),
 
                         Forms\Components\Select::make('billing_cycle')
                             ->options([
@@ -99,24 +122,27 @@ class SubscriptionResource extends Resource
                                 Subscription::CYCLE_YEARLY => 'Anual',
                             ])
                             ->required()
-                            ->label('Ciclo de Facturación'),
+                            ->label('Ciclo de Facturación')
+                            ->helperText('Frecuencia de facturación'),
 
                         Forms\Components\Toggle::make('auto_renew')
                             ->label('Renovación Automática')
-                            ->default(true),
+                            ->default(true)
+                            ->helperText('Renovar automáticamente al vencer'),
                     ])->columns(2),
 
                 Forms\Components\Section::make('Información de Pago')
                     ->schema([
-                        Forms\Components\Select::make('payment_method')
-                            ->options([
-                                'credit_card' => 'Tarjeta de Crédito',
-                                'debit_card' => 'Tarjeta de Débito',
-                                'paypal' => 'PayPal',
-                                'bank_transfer' => 'Transferencia Bancaria',
-                                'cash' => 'Efectivo',
-                            ])
-                            ->label('Método de Pago'),
+                        Forms\Components\TextInput::make('stripe_subscription_id')
+                            ->label('ID Suscripción Stripe')
+                            ->placeholder('sub_...')
+                            ->maxLength(255)
+                            ->regex('/^sub_[a-zA-Z0-9]+$/')
+                            ->helperText('ID único de la suscripción en Stripe (formato: sub_1234567890)')
+                            ->nullable()
+                            ->validationMessages([
+                                'regex' => 'El ID de Stripe debe comenzar con "sub_" seguido de caracteres alfanuméricos',
+                            ]),
 
                         Forms\Components\Select::make('payment_status')
                             ->options([
@@ -125,11 +151,15 @@ class SubscriptionResource extends Resource
                                 Subscription::PAYMENT_FAILED => 'Fallido',
                             ])
                             ->default(Subscription::PAYMENT_PENDING)
-                            ->label('Estado del Pago'),
+                            ->label('Estado del Pago')
+                            ->helperText('Estado del último pago'),
 
                         Forms\Components\TextInput::make('transaction_id')
                             ->label('ID de Transacción')
-                            ->maxLength(100),
+                            ->maxLength(100)
+                            ->placeholder('txn_...')
+                            ->helperText('ID de la transacción en el sistema de pagos')
+                            ->nullable(),
                     ])->columns(3),
 
                 Forms\Components\Section::make('Información Adicional')
@@ -137,13 +167,15 @@ class SubscriptionResource extends Resource
                         Forms\Components\Textarea::make('notes')
                             ->label('Notas')
                             ->rows(3)
-                            ->maxLength(1000),
+                            ->maxLength(1000)
+                            ->helperText('Notas adicionales sobre la suscripción'),
 
                         Forms\Components\KeyValue::make('features')
                             ->label('Características del Plan')
                             ->keyLabel('Característica')
                             ->valueLabel('Valor')
-                            ->columnSpanFull(),
+                            ->columnSpanFull()
+                            ->helperText('Características incluidas en el plan'),
                     ]),
             ]);
     }
@@ -152,19 +184,23 @@ class SubscriptionResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('user.name')
+                TextColumn::make('id')
+                    ->label('ID')
+                    ->sortable()
+                    ->searchable(),
+
+                TextColumn::make('user.name')
                     ->searchable()
                     ->sortable()
                     ->label('Usuario'),
 
-                Tables\Columns\TextColumn::make('plan_type')
+                TextColumn::make('plan_type')
                     ->badge()
-                    ->color(fn (string $state): string => match ($state) {
-                        Subscription::PLAN_BASIC => 'gray',
-                        Subscription::PLAN_PREMIUM => 'warning',
-                        Subscription::PLAN_ENTERPRISE => 'success',
-                        default => 'gray',
-                    })
+                    ->colors([
+                        'gray' => Subscription::PLAN_BASIC,
+                        'warning' => Subscription::PLAN_PREMIUM,
+                        'success' => Subscription::PLAN_ENTERPRISE,
+                    ])
                     ->formatStateUsing(fn (string $state): string => match ($state) {
                         Subscription::PLAN_BASIC => 'Básico',
                         Subscription::PLAN_PREMIUM => 'Premium',
@@ -173,15 +209,14 @@ class SubscriptionResource extends Resource
                     })
                     ->label('Plan'),
 
-                Tables\Columns\TextColumn::make('status')
+                TextColumn::make('status')
                     ->badge()
-                    ->color(fn (string $state): string => match ($state) {
-                        Subscription::STATUS_ACTIVE => 'success',
-                        Subscription::STATUS_CANCELLED => 'danger',
-                        Subscription::STATUS_EXPIRED => 'warning',
-                        Subscription::STATUS_PENDING => 'info',
-                        default => 'gray',
-                    })
+                    ->colors([
+                        'success' => Subscription::STATUS_ACTIVE,
+                        'danger' => Subscription::STATUS_CANCELLED,
+                        'warning' => Subscription::STATUS_EXPIRED,
+                        'info' => Subscription::STATUS_PENDING,
+                    ])
                     ->formatStateUsing(fn (string $state): string => match ($state) {
                         Subscription::STATUS_ACTIVE => 'Activa',
                         Subscription::STATUS_CANCELLED => 'Cancelada',
@@ -191,12 +226,12 @@ class SubscriptionResource extends Resource
                     })
                     ->label('Estado'),
 
-                Tables\Columns\TextColumn::make('amount')
+                TextColumn::make('amount')
                     ->money('MXN')
                     ->sortable()
                     ->label('Monto'),
 
-                Tables\Columns\TextColumn::make('billing_cycle')
+                TextColumn::make('billing_cycle')
                     ->formatStateUsing(fn (string $state): string => match ($state) {
                         Subscription::CYCLE_MONTHLY => 'Mensual',
                         Subscription::CYCLE_QUARTERLY => 'Trimestral',
@@ -205,111 +240,79 @@ class SubscriptionResource extends Resource
                     })
                     ->label('Ciclo'),
 
-                Tables\Columns\TextColumn::make('start_date')
+                IconColumn::make('auto_renew')
+                    ->boolean()
+                    ->trueIcon('heroicon-o-check-circle')
+                    ->falseIcon('heroicon-o-x-circle')
+                    ->trueColor('success')
+                    ->falseColor('gray')
+                    ->label('Auto Renovación'),
+
+                TextColumn::make('start_date')
                     ->date()
                     ->sortable()
                     ->label('Inicio'),
 
-                Tables\Columns\TextColumn::make('end_date')
+                TextColumn::make('end_date')
                     ->date()
                     ->sortable()
-                    ->label('Fin')
-                    ->color(fn (Subscription $record): string => 
-                        $record->isExpired() ? 'danger' : 
-                        ($record->isExpiringSoon() ? 'warning' : 'success')
-                    ),
+                    ->label('Fin'),
 
-                Tables\Columns\IconColumn::make('auto_renew')
-                    ->boolean()
-                    ->label('Auto Renovar'),
+                TextColumn::make('next_billing_date')
+                    ->date()
+                    ->sortable()
+                    ->label('Próxima Facturación')
+                    ->toggleable(),
 
-                Tables\Columns\TextColumn::make('payment_status')
-                    ->badge()
-                    ->color(fn (string $state): string => match ($state) {
-                        Subscription::PAYMENT_COMPLETED => 'success',
-                        Subscription::PAYMENT_PENDING => 'warning',
-                        Subscription::PAYMENT_FAILED => 'danger',
-                        default => 'gray',
-                    })
-                    ->formatStateUsing(fn (string $state): string => match ($state) {
-                        Subscription::PAYMENT_COMPLETED => 'Completado',
-                        Subscription::PAYMENT_PENDING => 'Pendiente',
-                        Subscription::PAYMENT_FAILED => 'Fallido',
-                        default => $state,
-                    })
-                    ->label('Pago'),
-
-                Tables\Columns\TextColumn::make('created_at')
+                TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true)
-                    ->label('Creado'),
+                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                Tables\Filters\SelectFilter::make('plan_type')
+                SelectFilter::make('plan_type')
+                    ->label('Tipo de Plan')
                     ->options([
-                        Subscription::PLAN_BASIC => 'Plan Básico',
-                        Subscription::PLAN_PREMIUM => 'Plan Premium',
-                        Subscription::PLAN_ENTERPRISE => 'Plan Enterprise',
-                    ])
-                    ->label('Tipo de Plan'),
+                        Subscription::PLAN_BASIC => 'Básico',
+                        Subscription::PLAN_PREMIUM => 'Premium',
+                        Subscription::PLAN_ENTERPRISE => 'Enterprise',
+                    ]),
 
-                Tables\Filters\SelectFilter::make('status')
+                SelectFilter::make('status')
+                    ->label('Estado')
                     ->options([
                         Subscription::STATUS_ACTIVE => 'Activa',
                         Subscription::STATUS_CANCELLED => 'Cancelada',
                         Subscription::STATUS_EXPIRED => 'Expirada',
                         Subscription::STATUS_PENDING => 'Pendiente',
-                    ])
-                    ->label('Estado'),
+                    ]),
 
-                Tables\Filters\SelectFilter::make('billing_cycle')
+                SelectFilter::make('billing_cycle')
+                    ->label('Ciclo de Facturación')
                     ->options([
                         Subscription::CYCLE_MONTHLY => 'Mensual',
                         Subscription::CYCLE_QUARTERLY => 'Trimestral',
                         Subscription::CYCLE_YEARLY => 'Anual',
-                    ])
-                    ->label('Ciclo de Facturación'),
+                    ]),
 
-                Tables\Filters\TernaryFilter::make('auto_renew')
-                    ->label('Renovación Automática'),
+                Filter::make('active_subscriptions')
+                    ->label('Solo Suscripciones Activas')
+                    ->query(fn (Builder $query): Builder => $query->where('status', Subscription::STATUS_ACTIVE)),
 
-                Tables\Filters\Filter::make('expiring_soon')
-                    ->query(fn (Builder $query): Builder => $query->expiringSoon())
-                    ->label('Próximas a Expirar'),
-
-                Tables\Filters\Filter::make('expired')
-                    ->query(fn (Builder $query): Builder => $query->expired())
-                    ->label('Expiradas'),
+                Filter::make('expiring_soon')
+                    ->label('Próximas a Expirar')
+                    ->query(fn (Builder $query): Builder => $query->where('status', Subscription::STATUS_ACTIVE)
+                        ->where('end_date', '<=', now()->addDays(7))
+                        ->where('end_date', '>', now())),
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
-                Tables\Actions\Action::make('cancel')
-                    ->icon('heroicon-o-x-circle')
-                    ->color('danger')
-                    ->requiresConfirmation()
-                    ->action(fn (Subscription $record) => $record->cancel())
-                    ->visible(fn (Subscription $record) => $record->isActive())
-                    ->label('Cancelar'),
-
-                Tables\Actions\Action::make('renew')
-                    ->icon('heroicon-o-arrow-path')
-                    ->color('success')
-                    ->requiresConfirmation()
-                    ->action(fn (Subscription $record) => $record->renew())
-                    ->visible(fn (Subscription $record) => $record->status === Subscription::STATUS_CANCELLED)
-                    ->label('Renovar'),
+                Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
-                    Tables\Actions\BulkAction::make('cancel')
-                        ->icon('heroicon-o-x-circle')
-                        ->color('danger')
-                        ->requiresConfirmation()
-                        ->action(fn (Collection $records) => $records->each->cancel())
-                        ->label('Cancelar Seleccionadas'),
                 ]),
             ])
             ->defaultSort('created_at', 'desc');
@@ -327,14 +330,13 @@ class SubscriptionResource extends Resource
         return [
             'index' => Pages\ListSubscriptions::route('/'),
             'create' => Pages\CreateSubscription::route('/create'),
-            'view' => Pages\ViewSubscription::route('/{record}'),
             'edit' => Pages\EditSubscription::route('/{record}/edit'),
+            'view' => Pages\ViewSubscription::route('/{record}'),
         ];
     }
 
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()
-            ->with('user');
+        return parent::getEloquentQuery()->with(['user']);
     }
 } 

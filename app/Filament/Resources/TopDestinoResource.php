@@ -130,8 +130,9 @@ class TopDestinoResource extends Resource
                     ->limit(50)
                     ->searchable(),
                 
-                Tables\Columns\BadgeColumn::make('status')
+                Tables\Columns\TextColumn::make('status')
                     ->label('Estado')
+                    ->badge()
                     ->colors([
                         'warning' => 'draft',
                         'info' => 'pending_review',

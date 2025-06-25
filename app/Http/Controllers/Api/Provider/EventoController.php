@@ -262,7 +262,31 @@ class EventoController extends BaseController
      *     ),
      *     @OA\RequestBody(
      *         required=true,
-     *         @OA\JsonContent(ref="#/components/schemas/EventoUpdateRequest")
+     *         @OA\JsonContent(
+     *             @OA\Property(property="name", type="string", maxLength=255, description="Nombre del evento"),
+     *             @OA\Property(property="description", type="string", nullable=true, description="Descripción completa del evento"),
+     *             @OA\Property(property="short_description", type="string", maxLength=255, nullable=true, description="Descripción corta del evento"),
+     *             @OA\Property(property="start_date", type="string", format="date", description="Fecha de inicio del evento"),
+     *             @OA\Property(property="end_date", type="string", format="date", description="Fecha de fin del evento"),
+     *             @OA\Property(property="location", type="string", maxLength=255, nullable=true, description="Ubicación del evento"),
+     *             @OA\Property(property="latitude", type="number", format="float", nullable=true, description="Latitud de la ubicación"),
+     *             @OA\Property(property="longitude", type="number", format="float", nullable=true, description="Longitud de la ubicación"),
+     *             @OA\Property(property="price", type="number", format="float", nullable=true, description="Precio del evento"),
+     *             @OA\Property(property="capacity", type="integer", nullable=true, description="Capacidad máxima del evento"),
+     *             @OA\Property(property="destino_id", type="integer", nullable=true, description="ID del destino asociado"),
+     *             @OA\Property(property="organizer_name", type="string", maxLength=255, nullable=true, description="Nombre del organizador"),
+     *             @OA\Property(property="organizer_email", type="string", format="email", nullable=true, description="Email del organizador"),
+     *             @OA\Property(property="organizer_phone", type="string", maxLength=20, nullable=true, description="Teléfono del organizador"),
+     *             @OA\Property(property="website_url", type="string", format="uri", nullable=true, description="URL del sitio web del evento"),
+     *             @OA\Property(property="categoria_ids", type="array", @OA\Items(type="integer"), nullable=true, description="IDs de las categorías"),
+     *             @OA\Property(property="caracteristica_ids", type="array", @OA\Items(type="integer"), nullable=true, description="IDs de las características"),
+     *             @OA\Property(property="tag_ids", type="array", @OA\Items(type="integer"), nullable=true, description="IDs de las etiquetas"),
+     *             @OA\Property(property="main_image", type="string", nullable=true, description="Imagen principal en base64"),
+     *             @OA\Property(property="gallery", type="array", @OA\Items(type="string"), nullable=true, description="Galería de imágenes en base64"),
+     *             @OA\Property(property="contact_info", type="object", nullable=true, description="Información de contacto adicional"),
+     *             @OA\Property(property="social_media", type="object", nullable=true, description="Redes sociales"),
+     *             @OA\Property(property="status", type="string", enum={"draft","published","pending_review"}, description="Estado del evento")
+     *         )
      *     ),
      *     @OA\Response(
      *         response=200,

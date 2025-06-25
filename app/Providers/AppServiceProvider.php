@@ -8,6 +8,9 @@ use App\Models\Review;
 use App\Models\HomeConfig;
 use App\Models\Evento;
 use App\Models\Destino;
+use App\Models\Invoice;
+use App\Models\PaymentMethod;
+use App\Models\Subscription;
 use App\Observers\ReviewObserver;
 use App\Policies\ReviewPolicy;
 use App\Policies\HomeConfigPolicy;
@@ -38,5 +41,41 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(HomeConfig::class, HomeConfigPolicy::class);
         Gate::policy(Evento::class, EventoPolicy::class);
         Gate::policy(Destino::class, GalleryPolicy::class);
+        
+        // Políticas para recursos de Stripe - acceso total para admin
+        Gate::define('viewAny', function ($user, $model) {
+            if (in_array($model, [Invoice::class, PaymentMethod::class, Subscription::class])) {
+                return $user->hasRole('admin');
+            }
+            return true;
+        });
+        
+        Gate::define('view', function ($user, $model) {
+            if (in_array(get_class($model), [Invoice::class, PaymentMethod::class, Subscription::class])) {
+                return $user->hasRole('admin');
+            }
+            return true;
+        });
+        
+        Gate::define('create', function ($user, $model) {
+            if (in_array($model, [Invoice::class, PaymentMethod::class, Subscription::class])) {
+                return $user->hasRole('admin');
+            }
+            return true;
+        });
+        
+        Gate::define('update', function ($user, $model) {
+            if (in_array(get_class($model), [Invoice::class, PaymentMethod::class, Subscription::class])) {
+                return $user->hasRole('admin');
+            }
+            return true;
+        });
+        
+        Gate::define('delete', function ($user, $model) {
+            if (in_array(get_class($model), [Invoice::class, PaymentMethod::class, Subscription::class])) {
+                return $user->hasRole('admin');
+            }
+            return true;
+        });
     }
 }

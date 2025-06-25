@@ -5,7 +5,7 @@ return [
     'documentations' => [
         'default' => [
             'api' => [
-                'title' => 'L5 Swagger UI',
+                'title' => 'Vive Hidalgo API Documentation',
             ],
 
             'routes' => [
@@ -13,6 +13,7 @@ return [
                  * Route for accessing api documentation interface
                  */
                 'api' => 'api/documentation',
+                'docs' => 'docs',
             ],
             'paths' => [
                 /*
@@ -94,7 +95,7 @@ return [
             /*
              * Edit to set the api's base path
              */
-            'base' => env('L5_SWAGGER_BASE_PATH', null),
+            'base' => env('L5_SWAGGER_BASE_PATH', '/api/v1'),
 
             /*
              * Absolute path to directories that should be excluded from scanning
@@ -159,7 +160,22 @@ return [
              * @note This option overwrites `paths.excludes`
              * @see \OpenApi\scan
              */
-            'exclude' => [],
+            'exclude' => [
+                app_path('Http/Controllers/Api/ReviewController.php'),
+                app_path('Http/Controllers/Api/Provider/EventoController.php'),
+                app_path('Http/Controllers/Api/MediaController.php'),
+                app_path('Http/Controllers/Api/SearchController.php'),
+                app_path('Http/Controllers/Api/SubscriptionController.php'),
+                app_path('Http/Controllers/Api/UserController.php'),
+                app_path('Http/Controllers/Api/PaymentController.php'),
+                app_path('Http/Controllers/Api/Public/DestinoController.php'),
+                app_path('Http/Controllers/Api/Public/HomeConfigController.php'),
+                app_path('Http/Controllers/Api/Public/RegionController.php'),
+                app_path('Http/Controllers/Api/Public/HomeController.php'),
+                app_path('Http/Controllers/Api/Public/SectionController.php'),
+                app_path('Http/Controllers/Api/Public/TagController.php'),
+                app_path('Http/Controllers/Api/AuditController.php'),
+            ],
 
             /*
              * Allows to generate specs either for OpenAPI 3.0.0 or OpenAPI 3.1.0.
@@ -211,13 +227,13 @@ return [
                         ],
                     ],
                 ],
+                */
                 'sanctum' => [ // Unique name of security
                     'type' => 'apiKey', // Valid values are "basic", "apiKey" or "oauth2".
                     'description' => 'Enter token in format (Bearer <token>)',
                     'name' => 'Authorization', // The name of the header or query parameter to be used.
                     'in' => 'header', // The location of the API key. Valid values are "query" or "header".
                 ],
-                */
             ],
             'security' => [
                 /*
@@ -232,6 +248,7 @@ return [
 
                     'passport' => []
                     */
+                    'sanctum' => []
                 ],
             ],
         ],
@@ -240,7 +257,7 @@ return [
          * Set this to `true` in development mode so that docs would be regenerated on each request
          * Set this to `false` to disable swagger generation on production
          */
-        'generate_always' => env('L5_SWAGGER_GENERATE_ALWAYS', false),
+        'generate_always' => env('L5_SWAGGER_GENERATE_ALWAYS', true),
 
         /*
          * Set this to `true` to generate a copy of documentation in yaml format
@@ -315,7 +332,7 @@ return [
          * Constants which can be used in annotations
          */
         'constants' => [
-            'L5_SWAGGER_CONST_HOST' => env('L5_SWAGGER_CONST_HOST', 'http://my-default-host.com'),
+            'L5_SWAGGER_CONST_HOST' => env('L5_SWAGGER_CONST_HOST', 'http://localhost:8000'),
         ],
     ],
 ];
