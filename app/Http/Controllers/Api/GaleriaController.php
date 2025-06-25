@@ -88,6 +88,9 @@ class GaleriaController extends BaseController
                 ->where('user_id', auth()->id())
                 ->firstOrFail();
 
+            // Autorizar acceso a la galería usando la policy
+            $this->authorize('view', $destino);
+
             // Obtener imágenes ordenadas
             $imagenes = Imagen::where('imageable_type', Destino::class)
                 ->where('imageable_id', $destino_id)
@@ -167,6 +170,9 @@ class GaleriaController extends BaseController
                 ->where('user_id', auth()->id())
                 ->firstOrFail();
 
+            // Autorizar gestión de la galería usando la policy
+            $this->authorize('reorder', $destino);
+
             // Validar request
             $request->validate([
                 'imagen_ids' => 'required|array|min:1',
@@ -243,6 +249,9 @@ class GaleriaController extends BaseController
             $destino = Destino::where('id', $destino_id)
                 ->where('user_id', auth()->id())
                 ->firstOrFail();
+
+            // Autorizar gestión de la galería usando la policy
+            $this->authorize('setMain', $destino);
 
             // Validar request
             $request->validate([
@@ -328,6 +337,9 @@ class GaleriaController extends BaseController
             $destino = Destino::where('id', $destino_id)
                 ->where('user_id', auth()->id())
                 ->firstOrFail();
+
+            // Autorizar gestión de la galería usando la policy
+            $this->authorize('deleteImage', $destino);
 
             // Verificar que la imagen pertenece al destino
             $imagen = Imagen::where('id', $imagen_id)

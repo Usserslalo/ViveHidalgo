@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Http\JsonResponse;
 use Intervention\Image\Facades\Image;
 use Illuminate\Support\Str;
+use App\Models\Destino;
 
 /**
  * @OA\Tag(
@@ -96,9 +97,14 @@ class MediaController extends BaseController
             return $this->errorResponse('Modelo no encontrado', 404);
         }
 
-        // Verificar permisos (solo el dueño o admin puede subir imágenes)
-        if (!$this->canUploadImage($model)) {
-            return $this->errorResponse('No autorizado para subir imágenes a este recurso', 403);
+        // Verificar permisos usando la policy correspondiente
+        if ($model instanceof Destino) {
+            $this->authorize('upload', $model);
+        } else {
+            // Para otros modelos, usar lógica genérica
+            if (!$this->canUploadImage($model)) {
+                return $this->errorResponse('No autorizado para subir imágenes a este recurso', 403);
+            }
         }
 
         try {
@@ -168,9 +174,15 @@ class MediaController extends BaseController
      */
     public function destroy(Imagen $imagen): JsonResponse
     {
-        // Verificar permisos
-        if (!$this->canDeleteImage($imagen)) {
-            return $this->errorResponse('No autorizado para eliminar esta imagen', 403);
+        // Verificar permisos usando la policy correspondiente
+        $model = $imagen->imageable;
+        if ($model instanceof Destino) {
+            $this->authorize('deleteImage', $model);
+        } else {
+            // Para otros modelos, usar lógica genérica
+            if (!$this->canDeleteImage($imagen)) {
+                return $this->errorResponse('No autorizado para eliminar esta imagen', 403);
+            }
         }
 
         try {

@@ -147,6 +147,8 @@ Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
 
     // Eventos turísticos (proveedores)
     Route::post('provider/eventos', [ProviderEventoController::class, 'store'])->name('provider.eventos.store');
+    Route::put('provider/eventos/{evento}', [ProviderEventoController::class, 'update'])->name('provider.eventos.update');
+    Route::delete('provider/eventos/{evento}', [ProviderEventoController::class, 'destroy'])->name('provider.eventos.destroy');
     
     // Actividades turísticas (proveedores)
     Route::post('provider/destinos/{id}/actividades', [ProviderActividadController::class, 'store'])->name('provider.actividades.store');
@@ -258,9 +260,6 @@ Route::post('v1/subscription/webhook', [SubscriptionController::class, 'webhook'
 Route::middleware(['auth:sanctum'])->group(function () {
     // Rutas de autenticación
     Route::post('logout', [AuthController::class, 'logout'])->name('logout');
-    Route::get('profile', [ProfileController::class, 'show'])->name('profile.show');
-    Route::put('profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::post('profile/avatar', [ProfileController::class, 'updateAvatar'])->name('profile.avatar');
     
     // Reseñas
     Route::post('reviews/{id}/reply', [PublicDestinoController::class, 'replyToReview'])->name('reviews.reply');

@@ -95,6 +95,9 @@ class EventoController extends BaseController
                 return $this->sendError('Solo los proveedores pueden crear eventos.', [], 403);
             }
 
+            // Autorizar creación de evento usando la policy
+            $this->authorize('create', Evento::class);
+
             // Validar datos
             $validated = $request->validate([
                 'name' => 'required|string|max:255',
@@ -239,6 +242,204 @@ class EventoController extends BaseController
         } catch (\Exception $e) {
             Log::error('Error processing base64 image: ' . $e->getMessage());
             return '';
+        }
+    }
+
+    /**
+     * @OA\Put(
+     *     path="/api/v1/provider/eventos/{evento}",
+     *     operationId="updateEvento",
+     *     tags={"Provider Content"},
+     *     summary="Actualizar un evento existente",
+     *     description="Permite a los proveedores actualizar un evento turístico existente",
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(
+     *         name="evento",
+     *         in="path",
+     *         required=true,
+     *         description="ID del evento",
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(ref="#/components/schemas/EventoUpdateRequest")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Evento actualizado exitosamente",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="data", type="object",
+     *                 @OA\Property(property="evento", type="object")
+     *             ),
+     *             @OA\Property(property="message", type="string", example="Evento actualizado exitosamente.")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=403,
+     *         description="Acceso denegado",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="No tienes permisos para actualizar este evento.")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Evento no encontrado"
+     *     )
+     * )
+     */
+    public function update(Request $request, Evento $evento): JsonResponse
+    {
+        try {
+            // Autorizar actualización del evento usando la policy
+            $this->authorize('update', $evento);
+
+            // Validar datos
+            $validated = $request->validate([
+                'name' => 'sometimes|string|max:255',
+                'description' => 'nullable|string',
+                'short_description' => 'nullable|string|max:255',
+                'start_date' => 'sometimes|date|after:now',
+                'end_date' => 'sometimes|date|after:start_date',
+                'location' => 'nullable|string|max:255',
+                'latitude' => 'nullable|numeric|between:-90,90',
+                'longitude' => 'nullable|numeric|between:-180,180',
+                'price' => 'nullable|numeric|min:0',
+                'capacity' => 'nullable|integer|min:0',
+                'destino_id' => 'nullable|integer|exists:destinos,id',
+                'organizer_name' => 'nullable|string|max:255',
+                'organizer_email' => 'nullable|email',
+                'organizer_phone' => 'nullable|string|max:20',
+                'website_url' => 'nullable|url',
+                'categoria_ids' => 'nullable|array',
+                'categoria_ids.*' => 'integer|exists:categorias,id',
+                'caracteristica_ids' => 'nullable|array',
+                'caracteristica_ids.*' => 'integer|exists:caracteristicas,id',
+                'tag_ids' => 'nullable|array',
+                'tag_ids.*' => 'integer|exists:tags,id',
+                'main_image' => 'nullable|string',
+                'gallery' => 'nullable|array',
+                'gallery.*' => 'string',
+                'contact_info' => 'nullable|array',
+                'social_media' => 'nullable|array',
+                'status' => 'sometimes|string|in:draft,published,pending_review'
+            ]);
+
+            // Verificar que el destino pertenezca al usuario si se especifica
+            if (!empty($validated['destino_id'])) {
+                $destino = Destino::where('id', $validated['destino_id'])
+                    ->where('user_id', $evento->user_id)
+                    ->first();
+
+                if (!$destino) {
+                    return $this->sendError('El destino especificado no pertenece a tu cuenta.', [], 422);
+                }
+            }
+
+            // Procesar imagen principal si se proporciona
+            if (!empty($validated['main_image'])) {
+                $validated['main_image'] = $this->processBase64Image($validated['main_image'], 'eventos/main');
+            }
+
+            // Procesar galería si se proporciona
+            if (!empty($validated['gallery'])) {
+                $galleryPaths = [];
+                foreach ($validated['gallery'] as $image) {
+                    $galleryPaths[] = $this->processBase64Image($image, 'eventos/gallery');
+                }
+                $validated['gallery'] = $galleryPaths;
+            }
+
+            // Actualizar el evento
+            $evento->update($validated);
+
+            // Actualizar relaciones si se proporcionan
+            if (isset($validated['categoria_ids'])) {
+                $evento->categorias()->sync($validated['categoria_ids']);
+            }
+
+            if (isset($validated['caracteristica_ids'])) {
+                $evento->caracteristicas()->sync($validated['caracteristica_ids']);
+            }
+
+            if (isset($validated['tag_ids'])) {
+                $evento->tags()->sync($validated['tag_ids']);
+            }
+
+            // Log de actualización
+            Log::info('Evento updated', [
+                'evento_id' => $evento->id,
+                'provider_id' => $evento->user_id,
+                'name' => $evento->name
+            ]);
+
+            return $this->sendResponse($evento->load(['categorias', 'caracteristicas', 'tags']), 'Evento actualizado exitosamente.');
+
+        } catch (\Exception $e) {
+            Log::error('Error updating evento: ' . $e->getMessage());
+            return $this->sendError('Error al actualizar evento: ' . $e->getMessage(), [], 500);
+        }
+    }
+
+    /**
+     * @OA\Delete(
+     *     path="/api/v1/provider/eventos/{evento}",
+     *     operationId="deleteEvento",
+     *     tags={"Provider Content"},
+     *     summary="Eliminar un evento",
+     *     description="Permite a los proveedores eliminar un evento turístico",
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(
+     *         name="evento",
+     *         in="path",
+     *         required=true,
+     *         description="ID del evento",
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Evento eliminado exitosamente",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Evento eliminado exitosamente.")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=403,
+     *         description="Acceso denegado",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="No tienes permisos para eliminar este evento.")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Evento no encontrado"
+     *     )
+     * )
+     */
+    public function destroy(Evento $evento): JsonResponse
+    {
+        try {
+            // Autorizar eliminación del evento usando la policy
+            $this->authorize('delete', $evento);
+
+            // Log de eliminación
+            Log::info('Evento deleted', [
+                'evento_id' => $evento->id,
+                'provider_id' => $evento->user_id,
+                'name' => $evento->name
+            ]);
+
+            // Eliminar el evento
+            $evento->delete();
+
+            return $this->sendResponse(null, 'Evento eliminado exitosamente.');
+
+        } catch (\Exception $e) {
+            Log::error('Error deleting evento: ' . $e->getMessage());
+            return $this->sendError('Error al eliminar evento: ' . $e->getMessage(), [], 500);
         }
     }
 } 
