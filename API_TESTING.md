@@ -238,4 +238,215 @@ curl -X GET http://localhost:8000/api/v1/user/profile \
 2. ⏳ CRUDs de destinos turísticos
 3. ⏳ Sistema de favoritos
 4. ⏳ Panel de proveedores
-5. ⏳ Panel de administración 
+5. ⏳ Panel de administración
+
+# API Testing Guide
+
+## Nuevos Endpoints Optimizados para Frontend
+
+### 🏠 Endpoints de Home
+
+#### 1. Hero Section
+```bash
+GET /api/v1/public/home/hero
+```
+
+**Respuesta esperada:**
+```json
+{
+  "success": true,
+  "data": {
+    "hero": {
+      "background_image": "https://...",
+      "title": "Descubre Hidalgo",
+      "subtitle": "Tierra de aventura y tradición",
+      "search_placeholder": "Busca destinos, actividades..."
+    },
+    "featured_destinations": [
+      {
+        "id": 1,
+        "name": "Pueblo Mágico Real del Monte",
+        "slug": "real-del-monte",
+        "imagen_principal": "https://...",
+        "rating": 4.5,
+        "reviews_count": 127,
+        "favorite_count": 89,
+        "price_range": "moderado",
+        "caracteristicas": ["Pueblo Mágico", "Gastronomía", "Historia"],
+        "region": "Comarca Minera",
+        "distance_km": 15.2
+      }
+    ]
+  },
+  "message": "Datos del hero recuperados exitosamente."
+}
+```
+
+#### 2. Secciones Destacadas
+```bash
+GET /api/v1/public/home/sections
+```
+
+**Respuesta esperada:**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "slug": "pueblos-magicos",
+      "title": "Pueblos Mágicos",
+      "subtitle": "Descubre la magia de nuestros pueblos",
+      "image": "https://...",
+      "destinations_count": 8,
+      "destinations": [
+        {
+          "id": 1,
+          "name": "Real del Monte",
+          "slug": "real-del-monte",
+          "imagen_principal": "https://...",
+          "rating": 4.5,
+          "reviews_count": 127,
+          "favorite_count": 89,
+          "price_range": "moderado",
+          "caracteristicas": ["Pueblo Mágico", "Gastronomía", "Historia"],
+          "region": "Comarca Minera",
+          "distance_km": 15.2
+        }
+      ]
+    }
+  ],
+  "message": "Secciones recuperadas exitosamente."
+}
+```
+
+#### 3. Filtros Optimizados
+```bash
+GET /api/v1/public/home/filters
+```
+
+**Respuesta esperada:**
+```json
+{
+  "success": true,
+  "data": {
+    "filters": {
+      "categorias": [
+        {
+          "id": 1,
+          "name": "Pueblo Mágico",
+          "count": 8,
+          "icon": "🏘️"
+        }
+      ],
+      "caracteristicas": [
+        {
+          "id": 1,
+          "name": "Gastronomía",
+          "count": 15,
+          "icon": "🍽️"
+        }
+      ],
+      "regiones": [
+        {
+          "id": 1,
+          "name": "Comarca Minera",
+          "count": 6
+        }
+      ],
+      "price_ranges": [
+        {
+          "value": "gratis",
+          "label": "Gratis",
+          "count": 5
+        }
+      ]
+    }
+  },
+  "message": "Filtros recuperados exitosamente."
+}
+```
+
+### 🗺️ Endpoints de Destinos Optimizados
+
+#### 4. Lista de Destinos con Datos Visuales
+```bash
+GET /api/v1/public/destinos
+```
+
+**Respuesta optimizada incluye:**
+- `imagen_principal`: URL de imagen optimizada
+- `rating`: Calificación promedio
+- `reviews_count`: Número de reseñas
+- `favorite_count`: Número de favoritos
+- `price_range`: Rango de precios
+- `caracteristicas`: Array de características principales
+- `region`: Nombre de la región
+- `distance_km`: Distancia calculada (si se proporcionan coordenadas)
+
+#### 5. Detalle de Destino con Galería Optimizada
+```bash
+GET /api/v1/public/destinos/{slug}
+```
+
+**Galería optimizada incluye:**
+```json
+{
+  "gallery": [
+    {
+      "id": 1,
+      "url": "https://...",
+      "thumbnail": "https://...",
+      "alt": "Vista panorámica",
+      "is_main": true,
+      "order": 1,
+      "sizes": {
+        "original": "https://...",
+        "large": "https://...",
+        "medium": "https://...",
+        "thumbnail": "https://..."
+      }
+    }
+  ]
+}
+```
+
+### 🧪 Comandos de Prueba
+
+#### Ejecutar Seeders para Datos de Prueba
+```bash
+php artisan db:seed --class=HomeConfigSeeder
+```
+
+#### Limpiar Cache
+```bash
+php artisan cache:clear
+```
+
+#### Verificar Rutas
+```bash
+php artisan route:list --path=api/v1/public/home
+```
+
+### 📊 Verificación de Endpoints
+
+1. **Hero Section**: Verificar que devuelva configuración del home y destinos destacados
+2. **Secciones**: Verificar que devuelva secciones con destinos filtrados
+3. **Filtros**: Verificar que devuelva conteos y emojis
+4. **Destinos**: Verificar que incluya todos los campos visuales
+5. **Galería**: Verificar que incluya múltiples tamaños de imagen
+
+### 🔧 Configuración
+
+Los endpoints utilizan:
+- **Cache**: 5-10 minutos para optimizar rendimiento
+- **Fallbacks**: Imágenes placeholder cuando no hay datos reales
+- **Optimización**: Solo campos necesarios para frontend
+- **Estructura**: Respuestas consistentes con el patrón del proyecto
+
+### 📝 Notas de Implementación
+
+- Todos los endpoints siguen el patrón JSON descrito en `06_UX-Frontend.md`
+- Las imágenes usan placeholders para pruebas
+- Los emojis están mapeados por categoría/característica
+- Los conteos se calculan dinámicamente
+- El cache mejora significativamente el rendimiento 

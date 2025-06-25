@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\User;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use App\Models\HomeConfig;
 
 class DatabaseSeeder extends Seeder
 {
@@ -17,9 +18,15 @@ class DatabaseSeeder extends Seeder
         $this->call([
             RolePermissionSeeder::class,
             AdminUserSeeder::class,
+            RegionSeeder::class,
+            CategoriaSeeder::class,
             CaracteristicaSeeder::class,
-            UserSeeder::class,
+            TagSeeder::class,
             DestinoSeeder::class,
+            PromocionSeeder::class,
+            ReviewSeeder::class,
+            HomeConfigSeeder::class,
+            UserSeeder::class,
             ReviewReportSeeder::class,
         ]);
 

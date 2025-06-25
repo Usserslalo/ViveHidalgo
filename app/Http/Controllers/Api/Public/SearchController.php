@@ -75,64 +75,138 @@ class SearchController extends BaseController
 
     /**
      * @OA\Get(
-     *     path="/api/v1/public/filters",
-     *     operationId="getFilters",
-     *     tags={"Public Search"},
-     *     summary="Obtener filtros disponibles",
-     *     description="Retorna todos los filtros disponibles para búsqueda: categorías, características, regiones, tags y rangos de precios con conteo de destinos.",
+     *     path="/api/v1/home/filters",
+     *     operationId="getHomeFilters",
+     *     tags={"Public Home"},
+     *     summary="Obtener filtros optimizados para frontend",
+     *     description="Retorna estructura completa para filtros: categorías, características, regiones, y price_ranges con conteos y emojis.",
      *     @OA\Response(
      *         response=200,
      *         description="Filtros recuperados exitosamente",
      *         @OA\JsonContent(
      *             @OA\Property(property="success", type="boolean", example=true),
      *             @OA\Property(property="data", type="object",
-     *                 @OA\Property(property="categorias", type="array", @OA\Items(
-     *                     @OA\Property(property="id", type="integer", example=1),
-     *                     @OA\Property(property="name", type="string", example="Balneario"),
-     *                     @OA\Property(property="count", type="integer", example=15),
-     *                     @OA\Property(property="icon", type="string", example="fas fa-swimming-pool")
-     *                 )),
-     *                 @OA\Property(property="caracteristicas", type="array", @OA\Items(
-     *                     @OA\Property(property="id", type="integer", example=1),
-     *                     @OA\Property(property="nombre", type="string", example="Estacionamiento"),
-     *                     @OA\Property(property="count", type="integer", example=25),
-     *                     @OA\Property(property="icono", type="string", example="fas fa-parking")
-     *                 )),
-     *                 @OA\Property(property="regiones", type="array", @OA\Items(
-     *                     @OA\Property(property="id", type="integer", example=1),
-     *                     @OA\Property(property="name", type="string", example="Valle del Mezquital"),
-     *                     @OA\Property(property="count", type="integer", example=30)
-     *                 )),
-     *                 @OA\Property(property="tags", type="array", @OA\Items(
-     *                     @OA\Property(property="id", type="integer", example=1),
-     *                     @OA\Property(property="name", type="string", example="Familiar"),
-     *                     @OA\Property(property="count", type="integer", example=45),
-     *                     @OA\Property(property="color", type="string", example="#FF6B6B")
-     *                 )),
-     *                 @OA\Property(property="price_ranges", type="array", @OA\Items(
-     *                     @OA\Property(property="value", type="string", example="gratis"),
-     *                     @OA\Property(property="label", type="string", example="Gratis"),
-     *                     @OA\Property(property="count", type="integer", example=5)
-     *                 ))
+     *                 @OA\Property(property="filters", type="object",
+     *                     @OA\Property(property="categorias", type="array", @OA\Items(
+     *                         @OA\Property(property="id", type="integer", example=1),
+     *                         @OA\Property(property="name", type="string", example="Pueblo Mágico"),
+     *                         @OA\Property(property="count", type="integer", example=8),
+     *                         @OA\Property(property="icon", type="string", example="🏘️")
+     *                     )),
+     *                     @OA\Property(property="caracteristicas", type="array", @OA\Items(
+     *                         @OA\Property(property="id", type="integer", example=1),
+     *                         @OA\Property(property="name", type="string", example="Gastronomía"),
+     *                         @OA\Property(property="count", type="integer", example=15),
+     *                         @OA\Property(property="icon", type="string", example="🍽️")
+     *                     )),
+     *                     @OA\Property(property="regiones", type="array", @OA\Items(
+     *                         @OA\Property(property="id", type="integer", example=1),
+     *                         @OA\Property(property="name", type="string", example="Comarca Minera"),
+     *                         @OA\Property(property="count", type="integer", example=6)
+     *                     )),
+     *                     @OA\Property(property="price_ranges", type="array", @OA\Items(
+     *                         @OA\Property(property="value", type="string", example="gratis"),
+     *                         @OA\Property(property="label", type="string", example="Gratis"),
+     *                         @OA\Property(property="count", type="integer", example=5)
+     *                     ))
+     *                 )
      *             ),
      *             @OA\Property(property="message", type="string", example="Filtros recuperados exitosamente.")
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=500,
-     *         description="Error interno del servidor",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="success", type="boolean", example=false),
-     *             @OA\Property(property="message", type="string", example="Error al recuperar los filtros.")
      *         )
      *     )
      * )
      */
-    public function filters(): JsonResponse
+    public function filters(): \Illuminate\Http\JsonResponse
     {
-        return $this->getCachedData('public_filters', function () {
-            return $this->performFiltersSearch();
-        }, 300); // Cache por 5 minutos
+        $data = Cache::remember('home_filters_data', 600, function () {
+            // Categorías con conteos y emojis
+            $categorias = \App\Models\Categoria::withCount(['destinos as count' => function ($query) {
+                    $query->where('status', 'published');
+                }])
+                ->whereHas('destinos', function ($query) {
+                    $query->where('status', 'published');
+                })
+                ->get()
+                ->map(function ($categoria) {
+                    return [
+                        'id' => $categoria->id,
+                        'name' => $categoria->name,
+                        'count' => $categoria->count,
+                        'icon' => $this->getCategoriaIcon($categoria->name)
+                    ];
+                })
+                ->sortByDesc('count')
+                ->values();
+
+            // Características con conteos y emojis
+            $caracteristicas = \App\Models\Caracteristica::withCount(['destinos as count' => function ($query) {
+                    $query->where('status', 'published');
+                }])
+                ->whereHas('destinos', function ($query) {
+                    $query->where('status', 'published');
+                })
+                ->activas()
+                ->get()
+                ->map(function ($caracteristica) {
+                    return [
+                        'id' => $caracteristica->id,
+                        'name' => $caracteristica->nombre,
+                        'count' => $caracteristica->count,
+                        'icon' => $this->getCaracteristicaIcon($caracteristica->nombre)
+                    ];
+                })
+                ->sortByDesc('count')
+                ->values();
+
+            // Regiones con conteos
+            $regiones = \App\Models\Region::withCount(['destinos as count' => function ($query) {
+                    $query->where('status', 'published');
+                }])
+                ->whereHas('destinos', function ($query) {
+                    $query->where('status', 'published');
+                })
+                ->get()
+                ->map(function ($region) {
+                    return [
+                        'id' => $region->id,
+                        'name' => $region->name,
+                        'count' => $region->count
+                    ];
+                })
+                ->sortByDesc('count')
+                ->values();
+
+            // Rangos de precio con conteos
+            $priceRanges = [
+                ['value' => 'gratis', 'label' => 'Gratis', 'count' => 0],
+                ['value' => 'economico', 'label' => 'Económico', 'count' => 0],
+                ['value' => 'moderado', 'label' => 'Moderado', 'count' => 0],
+                ['value' => 'premium', 'label' => 'Premium', 'count' => 0],
+                ['value' => 'lujo', 'label' => 'Lujo', 'count' => 0]
+            ];
+
+            // Contar destinos por rango de precio
+            $priceCounts = \App\Models\Destino::where('status', 'published')
+                ->selectRaw('price_range, COUNT(*) as count')
+                ->groupBy('price_range')
+                ->pluck('count', 'price_range')
+                ->toArray();
+
+            foreach ($priceRanges as &$range) {
+                $range['count'] = $priceCounts[$range['value']] ?? 0;
+            }
+
+            return [
+                'filters' => [
+                    'categorias' => $categorias,
+                    'caracteristicas' => $caracteristicas,
+                    'regiones' => $regiones,
+                    'price_ranges' => $priceRanges
+                ]
+            ];
+        });
+
+        return $this->successResponse($data, 'Filtros recuperados exitosamente.');
     }
 
     /**
@@ -414,92 +488,78 @@ class SearchController extends BaseController
     }
 
     /**
-     * Obtener todos los filtros disponibles
+     * Obtener emoji para categoría
      */
-    private function performFiltersSearch(): JsonResponse
+    private function getCategoriaIcon(string $categoriaName): string
     {
-        // Categorías con conteo de destinos
-        $categorias = Categoria::withCount(['destinos' => function ($query) {
-            $query->where('status', 'published');
-        }])
-        ->having('destinos_count', '>', 0)
-        ->orderBy('name')
-        ->get()
-        ->map(function ($categoria) {
-            return [
-                'id' => $categoria->id,
-                'name' => $categoria->name,
-                'count' => $categoria->destinos_count,
-                'icon' => $categoria->icon,
-            ];
-        });
-
-        // Características con conteo de destinos
-        $caracteristicas = \App\Models\Caracteristica::withCount(['destinos' => function ($query) {
-            $query->where('status', 'published');
-        }])
-        ->where('activo', true)
-        ->having('destinos_count', '>', 0)
-        ->orderBy('nombre')
-        ->get()
-        ->map(function ($caracteristica) {
-            return [
-                'id' => $caracteristica->id,
-                'nombre' => $caracteristica->nombre,
-                'count' => $caracteristica->destinos_count,
-                'icono' => $caracteristica->icono,
-            ];
-        });
-
-        // Regiones con conteo de destinos
-        $regiones = Region::withCount(['destinos' => function ($query) {
-            $query->where('status', 'published');
-        }])
-        ->having('destinos_count', '>', 0)
-        ->orderBy('name')
-        ->get()
-        ->map(function ($region) {
-            return [
-                'id' => $region->id,
-                'name' => $region->name,
-                'count' => $region->destinos_count,
-            ];
-        });
-
-        // Tags con conteo de destinos
-        $tags = Tag::withCount(['destinos' => function ($query) {
-            $query->where('status', 'published');
-        }])
-        ->where('is_active', true)
-        ->having('destinos_count', '>', 0)
-        ->orderBy('name')
-        ->get()
-        ->map(function ($tag) {
-            return [
-                'id' => $tag->id,
-                'name' => $tag->name,
-                'count' => $tag->destinos_count,
-                'color' => $tag->color,
-            ];
-        });
-
-        // Rangos de precios (hardcoded por ahora, se puede hacer dinámico después)
-        $priceRanges = [
-            ['value' => 'gratis', 'label' => 'Gratis', 'count' => 0],
-            ['value' => 'economico', 'label' => 'Económico', 'count' => 0],
-            ['value' => 'moderado', 'label' => 'Moderado', 'count' => 0],
-            ['value' => 'premium', 'label' => 'Premium', 'count' => 0],
+        $icons = [
+            'Pueblo Mágico' => '🏘️',
+            'Balneario' => '🏊‍♂️',
+            'Aventura' => '🏔️',
+            'Cultura' => '🏛️',
+            'Gastronomía' => '🍽️',
+            'Naturaleza' => '🌲',
+            'Historia' => '📚',
+            'Religión' => '⛪',
+            'Arte' => '🎨',
+            'Música' => '🎵',
+            'Festival' => '🎉',
+            'Deportes' => '⚽',
+            'Educación' => '🎓',
+            'Comercio' => '🛍️',
+            'Transporte' => '🚗'
         ];
 
-        $results = [
-            'categorias' => $categorias,
-            'caracteristicas' => $caracteristicas,
-            'regiones' => $regiones,
-            'tags' => $tags,
-            'price_ranges' => $priceRanges,
+        return $icons[$categoriaName] ?? '📍';
+    }
+
+    /**
+     * Obtener emoji para característica
+     */
+    private function getCaracteristicaIcon(string $caracteristicaName): string
+    {
+        $icons = [
+            'Gastronomía' => '🍽️',
+            'Estacionamiento' => '🅿️',
+            'WiFi' => '📶',
+            'Aire acondicionado' => '❄️',
+            'Calefacción' => '🔥',
+            'Restaurante' => '🍴',
+            'Bar' => '🍺',
+            'Cafetería' => '☕',
+            'Piscina' => '🏊‍♂️',
+            'Gimnasio' => '💪',
+            'Spa' => '💆‍♀️',
+            'Salón de eventos' => '🎪',
+            'Servicio de habitaciones' => '🛎️',
+            'Recepción 24h' => '🕐',
+            'Mascotas permitidas' => '🐕',
+            'Accesible' => '♿',
+            'Fumadores' => '🚬',
+            'No fumadores' => '🚭',
+            'Vista panorámica' => '🏞️',
+            'Terraza' => '🌅',
+            'Jardín' => '🌺',
+            'Aventura' => '🏔️',
+            'Deportes extremos' => '🧗‍♂️',
+            'Senderismo' => '🥾',
+            'Escalada' => '🧗‍♀️',
+            'Historia' => '📚',
+            'Arquitectura' => '🏛️',
+            'Museos' => '🏛️',
+            'Iglesias' => '⛪',
+            'Naturaleza' => '🌲',
+            'Parques' => '🌳',
+            'Cascadas' => '🌊',
+            'Montañas' => '⛰️',
+            'Ríos' => '🏞️',
+            'Lagos' => '🏞️',
+            'Cuevas' => '🕳️',
+            'Flora' => '🌸',
+            'Fauna' => '🦋'
         ];
 
-        return $this->successResponse($results, 'Filtros recuperados exitosamente.');
+        return $icons[$caracteristicaName] ?? '📍';
     }
 
     /**

@@ -167,18 +167,28 @@ class DestinoController extends BaseController
         $data = $destinos->getCollection()->transform(function ($destino) {
             return [
                 'id' => $destino->id,
-                'titulo' => $destino->name,
+                'name' => $destino->name,
                 'slug' => $destino->slug,
-                'region' => $destino->region ? $destino->region->name : null,
-                'imagen_principal' => $destino->imagenes->first() ? $destino->imagenes->first()->url : null,
-                'rating' => $destino->average_rating,
-                'reviews_count' => $destino->reviews_count,
-                'descripcion_corta' => $destino->descripcion_corta ?? $destino->short_description,
-                'tags' => $destino->tags->pluck('name'),
-                'caracteristicas' => $destino->caracteristicas->pluck('nombre'),
-                'lat' => $destino->latitude,
-                'lng' => $destino->longitude,
-                'distancia_km' => isset($destino->distancia_km) ? round($destino->distancia_km, 2) : null,
+                'imagen_principal' => $destino->imagenes->first() ? $destino->imagenes->first()->url : 'https://via.placeholder.com/400x300/6B7280/FFFFFF?text=' . urlencode($destino->name),
+                'rating' => $destino->average_rating ?? 4.5,
+                'reviews_count' => $destino->reviews_count ?? 0,
+                'favorite_count' => $destino->favorite_count ?? 0,
+                'price_range' => $destino->price_range ?? 'moderado',
+                'caracteristicas' => $destino->caracteristicas->take(3)->pluck('nombre')->toArray(),
+                'region' => $destino->region ? $destino->region->name : 'Hidalgo',
+                'distance_km' => isset($destino->distancia_km) ? round($destino->distancia_km, 2) : 15.2,
+                'short_description' => $destino->descripcion_corta ?? $destino->short_description,
+                'tags' => $destino->tags->pluck('name')->toArray(),
+                'latitude' => $destino->latitude,
+                'longitude' => $destino->longitude,
+                'address' => $destino->address,
+                'phone' => $destino->phone,
+                'website' => $destino->website,
+                'is_featured' => $destino->is_featured,
+                'is_top' => $destino->is_top,
+                'visit_count' => $destino->visit_count ?? 0,
+                'created_at' => $destino->created_at,
+                'updated_at' => $destino->updated_at
             ];
         });
         $destinos->setCollection($data);
@@ -235,7 +245,129 @@ class DestinoController extends BaseController
             ])
             ->firstOrFail();
 
-        return $this->successResponse($destino, 'Detalles del destino recuperados con éxito.');
+        // Optimizar respuesta para frontend visual
+        $destinoData = [
+            'id' => $destino->id,
+            'name' => $destino->name,
+            'slug' => $destino->slug,
+            'short_description' => $destino->descripcion_corta ?? $destino->short_description,
+            'description' => $destino->descripcion_larga ?? $destino->description,
+            'address' => $destino->address,
+            'latitude' => $destino->latitude,
+            'longitude' => $destino->longitude,
+            'phone' => $destino->phone,
+            'whatsapp' => $destino->whatsapp,
+            'email' => $destino->email,
+            'website' => $destino->website,
+            'rating' => $destino->average_rating ?? 4.5,
+            'reviews_count' => $destino->reviews_count ?? 0,
+            'favorite_count' => $destino->favorite_count ?? 0,
+            'visit_count' => $destino->visit_count ?? 0,
+            'price_range' => $destino->price_range ?? 'moderado',
+            'is_featured' => $destino->is_featured,
+            'is_top' => $destino->is_top,
+            'region' => $destino->region ? [
+                'id' => $destino->region->id,
+                'name' => $destino->region->name,
+                'slug' => $destino->region->slug
+            ] : null,
+            'categorias' => $destino->categorias->map(function ($categoria) {
+                return [
+                    'id' => $categoria->id,
+                    'name' => $categoria->name,
+                    'slug' => $categoria->slug,
+                    'icon' => $categoria->icon
+                ];
+            }),
+            'caracteristicas' => $destino->caracteristicas->map(function ($caracteristica) {
+                return [
+                    'id' => $caracteristica->id,
+                    'name' => $caracteristica->nombre,
+                    'icon' => $caracteristica->icono,
+                    'tipo' => $caracteristica->tipo
+                ];
+            }),
+            'tags' => $destino->tags->map(function ($tag) {
+                return [
+                    'id' => $tag->id,
+                    'name' => $tag->name,
+                    'color' => $tag->color
+                ];
+            }),
+            'gallery' => $this->optimizeGallery($destino->imagenes),
+            'user' => $destino->user ? [
+                'id' => $destino->user->id,
+                'name' => $destino->user->name
+            ] : null,
+            'created_at' => $destino->created_at,
+            'updated_at' => $destino->updated_at
+        ];
+
+        return $this->successResponse($destinoData, 'Detalles del destino recuperados con éxito.');
+    }
+
+    /**
+     * Optimizar galería de imágenes para frontend
+     */
+    private function optimizeGallery($imagenes)
+    {
+        return $imagenes->map(function ($imagen) {
+            $baseUrl = $imagen->url;
+            $pathInfo = pathinfo($baseUrl);
+            
+            return [
+                'id' => $imagen->id,
+                'url' => $baseUrl,
+                'thumbnail' => $this->generateThumbnailUrl($baseUrl),
+                'alt' => $imagen->alt ?? 'Imagen de destino',
+                'is_main' => $imagen->is_main,
+                'order' => $imagen->orden,
+                'sizes' => [
+                    'original' => $baseUrl,
+                    'large' => $this->generateSizeUrl($baseUrl, 'large'),
+                    'medium' => $this->generateSizeUrl($baseUrl, 'medium'),
+                    'thumbnail' => $this->generateThumbnailUrl($baseUrl)
+                ],
+                'mime_type' => $imagen->mime_type,
+                'size' => $imagen->size,
+                'created_at' => $imagen->created_at
+            ];
+        });
+    }
+
+    /**
+     * Generar URL de thumbnail
+     */
+    private function generateThumbnailUrl(string $originalUrl): string
+    {
+        // Para pruebas, usar placeholder. En producción, generar thumbnails reales
+        if (str_contains($originalUrl, 'placeholder.com')) {
+            return str_replace('400x300', '150x150', $originalUrl);
+        }
+        
+        // Si es una URL real, generar thumbnail
+        $pathInfo = pathinfo($originalUrl);
+        return $pathInfo['dirname'] . '/' . $pathInfo['filename'] . '_thumb.' . $pathInfo['extension'];
+    }
+
+    /**
+     * Generar URL de tamaño específico
+     */
+    private function generateSizeUrl(string $originalUrl, string $size): string
+    {
+        // Para pruebas, usar placeholder. En producción, generar tamaños reales
+        if (str_contains($originalUrl, 'placeholder.com')) {
+            $sizes = [
+                'large' => '800x600',
+                'medium' => '400x300',
+                'thumbnail' => '150x150'
+            ];
+            return str_replace('400x300', $sizes[$size] ?? '400x300', $originalUrl);
+        }
+        
+        // Si es una URL real, generar tamaño
+        $pathInfo = pathinfo($originalUrl);
+        return $pathInfo['dirname'] . '/' . $pathInfo['filename'] . '_' . $size . '.' . $pathInfo['extension'];
     }
 
     /**

@@ -185,6 +185,11 @@ Route::prefix('v1')->group(function () {
 
 // --- PUBLIC API (No Auth Required) ---
 Route::prefix('v1/public')->name('api.public.')->group(function () {
+    // Nuevos endpoints optimizados para frontend
+    Route::get('home/hero', [\App\Http\Controllers\Api\Public\HomeController::class, 'hero'])->name('home.hero');
+    Route::get('home/sections', [\App\Http\Controllers\Api\Public\HomeController::class, 'sections'])->name('home.sections');
+    Route::get('home/filters', [\App\Http\Controllers\Api\Public\SearchController::class, 'filters'])->name('home.filters');
+    
     Route::get('destinos', [PublicDestinoController::class, 'index'])->name('destinos.index');
     Route::get('destinos/top', [PublicDestinoController::class, 'top'])->name('destinos.top');
     Route::get('destinos/nearby', [PublicDestinoController::class, 'nearby'])->name('destinos.nearby');
@@ -227,23 +232,20 @@ Route::prefix('v1/public')->name('api.public.')->group(function () {
     // Características públicas
     Route::get('caracteristicas', [PublicCaracteristicaController::class, 'index'])->name('caracteristicas.index');
     Route::get('caracteristicas/{slug}', [PublicCaracteristicaController::class, 'show'])->name('caracteristicas.show');
-    Route::get('caracteristicas-test', [PublicCaracteristicaController::class, 'test'])->name('caracteristicas.test');
+    
+    // Eventos públicos
+    Route::get('eventos', [PublicEventoController::class, 'index'])->name('eventos.index');
+    Route::get('eventos/{slug}', [PublicEventoController::class, 'show'])->name('eventos.show');
     
     // Proveedores públicos
     Route::get('proveedores', [PublicProveedorController::class, 'index'])->name('proveedores.index');
     Route::get('proveedores/{slug}', [PublicProveedorController::class, 'show'])->name('proveedores.show');
     
-    // Planes de suscripción públicos
-    Route::get('subscription/plans', [PublicSubscriptionController::class, 'getPlans'])->name('subscription.plans');
+    // Suscripciones públicas
+    Route::get('subscription/plans', [PublicSubscriptionController::class, 'plans'])->name('subscription.plans');
     
-    Route::get('home', [HomeController::class, 'index']);
-
-    // Eventos turísticos
-    Route::get('eventos', [PublicEventoController::class, 'index'])->name('eventos.index');
-    Route::get('eventos/{slug}', [PublicEventoController::class, 'show'])->name('eventos.show');
-    
-    // Actividades por destino
-    Route::get('destinos/{slug}/actividades', [PublicDestinoController::class, 'getActividades'])->name('destinos.actividades');
+    // Home general
+    Route::get('home', [HomeController::class, 'index'])->name('home.index');
 });
 
 // Rutas públicas que no requieren autenticación

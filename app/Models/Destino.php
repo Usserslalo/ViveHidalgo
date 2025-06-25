@@ -414,4 +414,106 @@ class Destino extends Model
             default => ['min' => null, 'max' => null]
         };
     }
+
+    /**
+     * Obtener la imagen principal optimizada
+     */
+    public function getImagenPrincipalOptimizadaAttribute()
+    {
+        $imagen = $this->imagenPrincipal;
+        if (!$imagen) {
+            return [
+                'original' => 'https://via.placeholder.com/400x300/6B7280/FFFFFF?text=' . urlencode($this->name),
+                'large' => 'https://via.placeholder.com/800x600/6B7280/FFFFFF?text=' . urlencode($this->name),
+                'medium' => 'https://via.placeholder.com/400x300/6B7280/FFFFFF?text=' . urlencode($this->name),
+                'thumbnail' => 'https://via.placeholder.com/150x150/6B7280/FFFFFF?text=' . urlencode($this->name),
+                'alt' => 'Imagen de ' . $this->name
+            ];
+        }
+
+        return [
+            'original' => $imagen->url,
+            'large' => $this->generateImageSize($imagen->url, 'large'),
+            'medium' => $this->generateImageSize($imagen->url, 'medium'),
+            'thumbnail' => $this->generateImageSize($imagen->url, 'thumbnail'),
+            'alt' => $imagen->alt ?? 'Imagen de ' . $this->name
+        ];
+    }
+
+    /**
+     * Obtener galería optimizada
+     */
+    public function getGaleriaOptimizadaAttribute()
+    {
+        return $this->imagenes->map(function ($imagen) {
+            return [
+                'id' => $imagen->id,
+                'url' => $imagen->url,
+                'thumbnail' => $this->generateImageSize($imagen->url, 'thumbnail'),
+                'alt' => $imagen->alt ?? 'Imagen de ' . $this->name,
+                'is_main' => $imagen->is_main,
+                'order' => $imagen->orden,
+                'sizes' => [
+                    'original' => $imagen->url,
+                    'large' => $this->generateImageSize($imagen->url, 'large'),
+                    'medium' => $this->generateImageSize($imagen->url, 'medium'),
+                    'thumbnail' => $this->generateImageSize($imagen->url, 'thumbnail')
+                ]
+            ];
+        });
+    }
+
+    /**
+     * Generar URL de imagen con tamaño específico
+     */
+    private function generateImageSize(string $originalUrl, string $size): string
+    {
+        // Para pruebas, usar placeholder. En producción, generar tamaños reales
+        if (str_contains($originalUrl, 'placeholder.com')) {
+            $sizes = [
+                'large' => '800x600',
+                'medium' => '400x300',
+                'thumbnail' => '150x150'
+            ];
+            return str_replace('400x300', $sizes[$size] ?? '400x300', $originalUrl);
+        }
+        
+        // Si es una URL real, generar tamaño
+        $pathInfo = pathinfo($originalUrl);
+        return $pathInfo['dirname'] . '/' . $pathInfo['filename'] . '_' . $size . '.' . $pathInfo['extension'];
+    }
+
+    /**
+     * Obtener características formateadas para frontend
+     */
+    public function getCaracteristicasFormateadasAttribute()
+    {
+        return $this->caracteristicas->take(3)->map(function ($caracteristica) {
+            return [
+                'id' => $caracteristica->id,
+                'name' => $caracteristica->nombre,
+                'icon' => $caracteristica->icono ?? '📍'
+            ];
+        });
+    }
+
+    /**
+     * Obtener datos visuales optimizados para listados
+     */
+    public function getDatosVisualesAttribute()
+    {
+        return [
+            'id' => $this->id,
+            'name' => $this->name,
+            'slug' => $this->slug,
+            'imagen_principal' => $this->imagen_principal_optimizada['medium'],
+            'rating' => $this->average_rating ?? 4.5,
+            'reviews_count' => $this->reviews_count ?? 0,
+            'favorite_count' => $this->favorite_count ?? 0,
+            'price_range' => $this->price_range ?? 'moderado',
+            'caracteristicas' => $this->caracteristicas_formateadas->pluck('name')->toArray(),
+            'region' => $this->region?->name ?? 'Hidalgo',
+            'distance_km' => $this->distance_km ?? 15.2
+        ];
+    }
 }
