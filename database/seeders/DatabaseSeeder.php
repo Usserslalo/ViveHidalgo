@@ -23,11 +23,10 @@ class DatabaseSeeder extends Seeder
             CaracteristicaSeeder::class,
             TagSeeder::class,
             DestinoSeeder::class,
-            PromocionSeeder::class,
-            ReviewSeeder::class,
             HomeConfigSeeder::class,
             UserSeeder::class,
             ReviewReportSeeder::class,
+            PromocionDestacadaSeeder::class,
         ]);
 
         // Crear usuario administrador si no existe

@@ -5176,6 +5176,149 @@
                 }
             }
         },
+        "/api/v1/public/promociones-destacadas": {
+            "get": {
+                "tags": [
+                    "Public Promociones"
+                ],
+                "summary": "Obtener promociones destacadas vigentes",
+                "description": "Retorna las promociones destacadas que están actualmente vigentes.",
+                "operationId": "getPromocionesDestacadas",
+                "responses": {
+                    "200": {
+                        "description": "Promociones recuperadas exitosamente",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer"
+                                                    },
+                                                    "titulo": {
+                                                        "type": "string"
+                                                    },
+                                                    "descripcion": {
+                                                        "type": "string"
+                                                    },
+                                                    "imagen": {
+                                                        "type": "string"
+                                                    },
+                                                    "fecha_inicio": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    },
+                                                    "fecha_fin": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    },
+                                                    "destinos": {
+                                                        "type": "array",
+                                                        "items": {
+                                                            "$ref": "#/components/schemas/Destino"
+                                                        }
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Promociones destacadas recuperadas exitosamente."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/public/promociones-destacadas/{id}": {
+            "get": {
+                "tags": [
+                    "Public Promociones"
+                ],
+                "summary": "Obtener una promoción destacada específica",
+                "description": "Retorna los detalles de una promoción destacada específica.",
+                "operationId": "getPromocionDestacada",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID de la promoción",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Promoción recuperada exitosamente",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer"
+                                                },
+                                                "titulo": {
+                                                    "type": "string"
+                                                },
+                                                "descripcion": {
+                                                    "type": "string"
+                                                },
+                                                "imagen": {
+                                                    "type": "string"
+                                                },
+                                                "fecha_inicio": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                },
+                                                "fecha_fin": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                },
+                                                "destinos": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "$ref": "#/components/schemas/Destino"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Promoción destacada recuperada exitosamente."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Promoción no encontrada"
+                    }
+                }
+            }
+        },
         "/api/v1/public/proveedores": {
             "get": {
                 "tags": [
@@ -6215,6 +6358,56 @@
                 },
                 "type": "object"
             },
+            "PromocionDestacada": {
+                "title": "Promoción Destacada",
+                "description": "Promociones destacadas que aparecen en la portada del sitio.",
+                "properties": {
+                    "id": {
+                        "description": "ID único de la promoción",
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "titulo": {
+                        "description": "Título de la promoción",
+                        "type": "string"
+                    },
+                    "descripcion": {
+                        "description": "Descripción de la promoción",
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "imagen": {
+                        "description": "URL de la imagen de la promoción",
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "fecha_inicio": {
+                        "description": "Fecha de inicio de la promoción",
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "fecha_fin": {
+                        "description": "Fecha de fin de la promoción",
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "is_active": {
+                        "description": "Indica si la promoción está activa",
+                        "type": "boolean"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    }
+                },
+                "type": "object"
+            },
             "ReviewReport": {
                 "title": "Reporte de Reseña",
                 "description": "Reporte de una reseña inapropiada o problemática.",
@@ -6450,6 +6643,10 @@
         {
             "name": "Provider Content",
             "description": "Provider Content"
+        },
+        {
+            "name": "Public Promociones",
+            "description": "Public Promociones"
         }
     ],
     "security": [

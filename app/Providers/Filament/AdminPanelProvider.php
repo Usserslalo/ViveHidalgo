@@ -34,6 +34,9 @@ class AdminPanelProvider extends PanelProvider
                 \App\Filament\Admin\Resources\InvoiceResource::class,
                 \App\Filament\Admin\Resources\PaymentMethodResource::class,
                 \App\Filament\Admin\Resources\SubscriptionResource::class,
+                // Admin Tasks (07_Admin-Tareas.md)
+                \App\Filament\Resources\HomeConfigResource::class,
+                \App\Filament\Resources\PromocionDestacadaResource::class,
                 // Legacy
                 \App\Filament\Resources\UserResource::class,
                 \App\Filament\Resources\CategoriaResource::class,

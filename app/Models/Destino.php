@@ -83,6 +83,11 @@ class Destino extends Model
         'favorite_count',
         'is_featured',
         'is_top',
+        'titulo_seo',
+        'descripcion_meta',
+        'keywords',
+        'open_graph_image',
+        'indexar_seo',
     ];
 
     protected $casts = [
@@ -91,6 +96,7 @@ class Destino extends Model
         'latitude' => 'float',
         'longitude' => 'float',
         'location' => 'array',
+        'indexar_seo' => 'boolean',
     ];
 
     public function user(): BelongsTo
@@ -515,5 +521,51 @@ class Destino extends Model
             'region' => $this->region?->name ?? 'Hidalgo',
             'distance_km' => $this->distance_km ?? 15.2
         ];
+    }
+
+    /**
+     * Obtener destinos TOP rotados para mostrar en portada
+     * Si hay más de $maxDestinos TOP, selecciona aleatoriamente $maxDestinos
+     */
+    public static function getTopDestinosRotados(int $maxDestinos = 8): \Illuminate\Database\Eloquent\Collection
+    {
+        $topDestinos = static::where('status', 'published')
+            ->where('is_top', true)
+            ->with([
+                'region:id,name',
+                'imagenes' => function ($q) { $q->main(); },
+                'caracteristicas' => function ($q) { $q->activas(); }
+            ])
+            ->orderByDesc('average_rating')
+            ->get();
+
+        // Si hay más destinos TOP que el máximo permitido, seleccionar aleatoriamente
+        if ($topDestinos->count() > $maxDestinos) {
+            return $topDestinos->shuffle()->take($maxDestinos);
+        }
+
+        return $topDestinos;
+    }
+
+    /**
+     * Verificar si el destino cumple criterios automáticos para ser TOP
+     */
+    public function cumpleCriteriosTop(): bool
+    {
+        return $this->average_rating >= 4.5 
+            && $this->favorite_count >= 50 
+            && $this->visit_count >= 500;
+    }
+
+    /**
+     * Marcar automáticamente como TOP si cumple criterios
+     */
+    public function marcarTopAutomatico(): bool
+    {
+        if ($this->cumpleCriteriosTop() && !$this->is_top) {
+            $this->update(['is_top' => true]);
+            return true;
+        }
+        return false;
     }
 }

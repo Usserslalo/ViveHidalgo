@@ -33,6 +33,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'role_or_permission' => \Spatie\Permission\Middlewares\RoleOrPermissionMiddleware::class,
             'api.rate.limit' => \App\Http\Middleware\ApiRateLimit::class,
             'security.headers' => \App\Http\Middleware\SecurityHeaders::class,
+            'guest' => \App\Http\Middleware\RedirectIfAuthenticated::class,
         ]);
 
         //

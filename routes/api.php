@@ -205,6 +205,10 @@ Route::prefix('v1/public')->name('api.public.')->group(function () {
     // Rutas públicas para promociones
     Route::get('promociones', [PromocionController::class, 'index'])->name('promociones.index');
     
+    // Rutas para promociones destacadas
+    Route::get('promociones-destacadas', [\App\Http\Controllers\Api\Public\PromocionDestacadaController::class, 'index'])->name('promociones-destacadas.index');
+    Route::get('promociones-destacadas/{id}', [\App\Http\Controllers\Api\Public\PromocionDestacadaController::class, 'show'])->name('promociones-destacadas.show');
+    
     // Rutas de búsqueda pública
     Route::get('search/autocomplete', [SearchController::class, 'autocomplete'])->name('search.autocomplete');
     Route::get('search/advanced', [SearchController::class, 'advancedSearch'])->name('search.advanced');

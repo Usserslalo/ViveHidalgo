@@ -95,13 +95,24 @@ class HomeConfig extends Model
         }
 
         return collect($this->featured_sections)->map(function ($section) {
+            // Contar destinos asignados
+            $destinationsCount = 0;
+            if (!empty($section['destino_ids'])) {
+                $destinationsCount = \App\Models\Destino::whereIn('id', $section['destino_ids'])
+                    ->where('status', 'published')
+                    ->count();
+            }
+
             return [
                 'slug' => $section['slug'] ?? '',
                 'title' => $section['title'] ?? '',
                 'subtitle' => $section['subtitle'] ?? '',
                 'image' => $section['image'] ?? null,
-                'destinations_count' => $section['destinations_count'] ?? 0,
+                'destino_ids' => $section['destino_ids'] ?? [],
+                'destinations_count' => $destinationsCount,
                 'order' => $section['order'] ?? 0,
+                'accent_color' => $section['accent_color'] ?? null,
+                'metadata' => $section['metadata'] ?? [],
             ];
         })->sortBy('order')->values()->toArray();
     }

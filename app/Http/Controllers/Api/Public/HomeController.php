@@ -144,48 +144,66 @@ class HomeController extends BaseController
     public function sections(): \Illuminate\Http\JsonResponse
     {
         $data = Cache::remember('home_sections_data', 600, function () {
-            $sections = [
-                [
-                    'slug' => 'pueblos-magicos',
-                    'title' => 'Pueblos Mágicos',
-                    'subtitle' => 'Descubre la magia de nuestros pueblos',
-                    'image' => 'https://via.placeholder.com/800x600/8B5CF6/FFFFFF?text=Pueblos+Mágicos',
-                    'destinations_count' => 0,
-                    'destinations' => []
-                ],
-                [
-                    'slug' => 'aventura',
-                    'title' => 'Aventura',
-                    'subtitle' => 'Experiencias llenas de adrenalina',
-                    'image' => 'https://via.placeholder.com/800x600/10B981/FFFFFF?text=Aventura',
-                    'destinations_count' => 0,
-                    'destinations' => []
-                ],
-                [
-                    'slug' => 'cultura',
-                    'title' => 'Cultura',
-                    'subtitle' => 'Historia y tradiciones vivas',
-                    'image' => 'https://via.placeholder.com/800x600/F59E0B/FFFFFF?text=Cultura',
-                    'destinations_count' => 0,
-                    'destinations' => []
-                ],
-                [
-                    'slug' => 'gastronomia',
-                    'title' => 'Gastronomía',
-                    'subtitle' => 'Sabores únicos de Hidalgo',
-                    'image' => 'https://via.placeholder.com/800x600/EF4444/FFFFFF?text=Gastronomía',
-                    'destinations_count' => 0,
-                    'destinations' => []
-                ],
-                [
-                    'slug' => 'naturaleza',
-                    'title' => 'Naturaleza',
-                    'subtitle' => 'Paisajes que te dejarán sin aliento',
-                    'image' => 'https://via.placeholder.com/800x600/059669/FFFFFF?text=Naturaleza',
-                    'destinations_count' => 0,
-                    'destinations' => []
-                ]
-            ];
+            // Obtener configuración activa
+            $homeConfig = HomeConfig::getActive();
+            
+            if (!$homeConfig || empty($homeConfig->featured_sections)) {
+                // Configuración por defecto si no hay secciones configuradas
+                $sections = [
+                    [
+                        'slug' => 'pueblos-magicos',
+                        'title' => 'Pueblos Mágicos',
+                        'subtitle' => 'Descubre la magia de nuestros pueblos',
+                        'image' => 'https://via.placeholder.com/800x600/8B5CF6/FFFFFF?text=Pueblos+Mágicos',
+                        'destinations_count' => 0,
+                        'destinations' => []
+                    ],
+                    [
+                        'slug' => 'aventura',
+                        'title' => 'Aventura',
+                        'subtitle' => 'Experiencias llenas de adrenalina',
+                        'image' => 'https://via.placeholder.com/800x600/10B981/FFFFFF?text=Aventura',
+                        'destinations_count' => 0,
+                        'destinations' => []
+                    ],
+                    [
+                        'slug' => 'cultura',
+                        'title' => 'Cultura',
+                        'subtitle' => 'Historia y tradiciones vivas',
+                        'image' => 'https://via.placeholder.com/800x600/F59E0B/FFFFFF?text=Cultura',
+                        'destinations_count' => 0,
+                        'destinations' => []
+                    ],
+                    [
+                        'slug' => 'gastronomia',
+                        'title' => 'Gastronomía',
+                        'subtitle' => 'Sabores únicos de Hidalgo',
+                        'image' => 'https://via.placeholder.com/800x600/EF4444/FFFFFF?text=Gastronomía',
+                        'destinations_count' => 0,
+                        'destinations' => []
+                    ],
+                    [
+                        'slug' => 'naturaleza',
+                        'title' => 'Naturaleza',
+                        'subtitle' => 'Paisajes que te dejarán sin aliento',
+                        'image' => 'https://via.placeholder.com/800x600/059669/FFFFFF?text=Naturaleza',
+                        'destinations_count' => 0,
+                        'destinations' => []
+                    ]
+                ];
+            } else {
+                // Usar secciones configuradas
+                $sections = collect($homeConfig->getFeaturedSectionsFormatted())->map(function ($section) {
+                    return [
+                        'slug' => $section['slug'],
+                        'title' => $section['title'],
+                        'subtitle' => $section['subtitle'],
+                        'image' => $section['image'] ?? 'https://via.placeholder.com/800x600/6B7280/FFFFFF?text=' . urlencode($section['title']),
+                        'destinations_count' => 0,
+                        'destinations' => []
+                    ];
+                })->toArray();
+            }
 
             // Poblar cada sección con destinos reales
             foreach ($sections as &$section) {
@@ -219,6 +237,26 @@ class HomeController extends BaseController
      */
     private function getDestinosForSection(string $sectionSlug)
     {
+        $homeConfig = HomeConfig::getActive();
+        
+        // Si hay configuración activa, buscar destinos asignados específicamente
+        if ($homeConfig && $homeConfig->featured_sections) {
+            $sectionConfig = collect($homeConfig->featured_sections)->firstWhere('slug', $sectionSlug);
+            
+            if ($sectionConfig && !empty($sectionConfig['destino_ids'])) {
+                return Destino::with(['region', 'caracteristicas' => function ($query) {
+                        $query->activas();
+                    }, 'imagenPrincipal'])
+                    ->where('status', 'published')
+                    ->whereIn('id', $sectionConfig['destino_ids'])
+                    ->orderBy('average_rating', 'desc')
+                    ->orderBy('reviews_count', 'desc')
+                    ->limit(8)
+                    ->get();
+            }
+        }
+
+        // Si no hay destinos asignados específicamente, usar lógica por defecto
         $query = Destino::with(['region', 'caracteristicas' => function ($query) {
                 $query->activas();
             }, 'imagenPrincipal'])
@@ -248,6 +286,12 @@ class HomeController extends BaseController
             case 'naturaleza':
                 $query->whereHas('caracteristicas', function ($q) {
                     $q->whereIn('nombre', ['Naturaleza', 'Parques', 'Cascadas', 'Montañas']);
+                });
+                break;
+            default:
+                // Para secciones personalizadas, buscar por características o categorías similares
+                $query->whereHas('caracteristicas', function ($q) use ($sectionSlug) {
+                    $q->where('nombre', 'like', '%' . ucfirst($sectionSlug) . '%');
                 });
                 break;
         }
